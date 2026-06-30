@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net: Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for ApiKey entity
+    function isValidApiKey(data) {
+      return data.keys().hasAll(['id', 'key', 'name', 'status', 'createdAt', 'tier', 'usageCount'])
+        && data.keys().size() == 7
+        && data.id is string && data.id.size() <= 128
+        && data.key is string && data.key.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && (data.status == 'active' || data.status == 'revoked')
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && (data.tier == 'free' || data.tier == 'paid')
+        && data.usageCount is int && data.usageCount >= 0;
+    }
+
+    // Validation for UsageLog entity
+    function isValidUsageLog(data) {
+      return data.keys().hasAll(['id', 'apiKey', 'endpoint', 'timestamp', 'textLength', 'lossesDetected', 'success'])
+        && data.id is string && data.id.size() <= 128
+        && data.apiKey is string && data.apiKey.size() <= 128
+        && (data.endpoint == 'analyze' || data.endpoint == 'enhance')
+        && data.timestamp is string && data.timestamp.size() <= 64
+        && data.textLength is int && data.textLength >= 0
+        && data.lossesDetected is int && data.lossesDetected >= 0
+        && data.success is bool
+        && (!data.keys().hasAny(['ipAddress']) || (data.ipAddress is string && data.ipAddress.size() <= 64));
+    }
+
+    // Collection matching & rules
+    match /api_keys/{keyId} {
+      allow get: if isValidId(keyId);
+      allow list: if true; // In this developer environment, allow retrieval of developer keys
+      allow create: if isValidId(keyId) 
+        && isValidApiKey(incoming())
+        && incoming().usageCount == 0;
+      allow update: if isValidId(keyId)
+        && isValidApiKey(incoming())
+        && (
+          // Action 1: Revoke key (change status only)
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == 'revoked')
+          // Action 2: Record usage increment
+          || (incoming().diff(existing()).affectedKeys().hasOnly(['usageCount']) && incoming().usageCount == existing().usageCount + 1)
+        );
+      allow delete: if false; // Keys should only be revoked, never deleted
+    }
+
+    match /usage_logs/{logId} {
+      allow get: if isValidId(logId);
+      allow list: if true; // Allow stats dashboard to compile logs
+      allow create: if isValidId(logId) && isValidUsageLog(incoming());
+      allow update, delete: if false; // Logs are write-once/read-only
+    }
+  }
+}

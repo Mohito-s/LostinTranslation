@@ -1,0 +1,6 @@
+{
+  "name": "LostInTranslation API",
+  "description": "Многоязычный лингвистический middleware-слой для обогащения промтов ИИ глубоким культурным контекстом, начиная со сложного русского языка.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

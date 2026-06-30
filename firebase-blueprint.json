@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "ApiKey": {
+      "title": "ApiKey",
+      "description": "An API key for accessing the LostInTranslation API.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "key": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "revoked"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "tier": { "type": "string", "enum": ["free", "paid"] },
+        "usageCount": { "type": "integer" }
+      },
+      "required": ["id", "key", "name", "status", "createdAt", "tier", "usageCount"]
+    },
+    "UsageLog": {
+      "title": "UsageLog",
+      "description": "A log representing a single API request and metrics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "apiKey": { "type": "string" },
+        "endpoint": { "type": "string", "enum": ["analyze", "enhance"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "textLength": { "type": "integer" },
+        "lossesDetected": { "type": "integer" },
+        "success": { "type": "boolean" },
+        "ipAddress": { "type": "string" }
+      },
+      "required": ["id", "apiKey", "endpoint", "timestamp", "textLength", "lossesDetected", "success"]
+    }
+  },
+  "firestore": {
+    "api_keys": {
+      "schema": "ApiKey",
+      "description": "Store API keys registered by developers."
+    },
+    "usage_logs": {
+      "schema": "UsageLog",
+      "description": "Tracks request logs for rate limiting and dashboard analytics."
+    }
+  }
+}
