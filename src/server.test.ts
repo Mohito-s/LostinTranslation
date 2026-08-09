@@ -78,6 +78,20 @@ describe('HTTP API', () => {
     expect(res.status).toBe(401);
   });
 
+  it('compare flags meaning loss without a key', async () => {
+    const res = await request(app)
+      .post('/api/compare')
+      .send({ source_text: '行けたら行く', target_text: 'I will go if I can' });
+    expect(res.status).toBe(200);
+    expect(res.body.score).toBeLessThan(70);
+    expect(res.body.issues.length).toBeGreaterThan(0);
+  });
+
+  it('compare validates its body', async () => {
+    const res = await request(app).post('/api/compare').send({ source_text: 'only source' });
+    expect(res.status).toBe(400);
+  });
+
   it('enhance requires an API key (403 without)', async () => {
     const res = await request(app)
       .post('/api/enhance')

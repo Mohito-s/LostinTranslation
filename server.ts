@@ -29,7 +29,7 @@ import {
   optionalAuth, 
   AuthenticatedRequest 
 } from './src/lib/auth';
-import { analyzeText } from './src/lib/analyze';
+import { analyzeText, compareTranslation } from './src/lib/analyze';
 import { enhancePrompt } from './src/lib/enhance';
 import { checkRateLimit } from './src/lib/rateLimit';
 
@@ -203,7 +203,79 @@ export async function createApp() {
     }
   });
 
-  // 2. POST /api/enhance - Main Product: Enrich developer prompt with cultural context block
+  // 2. POST /api/compare - Cultural QA: compare a translation against the source
+  app.post('/api/compare', optionalAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { source_text, target_text, target_language } = req.body;
+      const targetLang = target_language || 'en';
+
+      if (!source_text || typeof source_text !== 'string' || !target_text || typeof target_text !== 'string') {
+        res.status(400).json({
+          error: 'source_text and target_text are required and must be strings'
+        });
+        return;
+      }
+
+      // Check for API key in header or body
+      const apiKeyHeader = req.headers['x-api-key'] || req.headers['authorization'];
+      let apiKeyString = (req.body.api_key || '') as string;
+
+      if (apiKeyHeader && typeof apiKeyHeader === 'string') {
+        apiKeyString = apiKeyHeader.replace('Bearer ', '').trim();
+      }
+
+      let activeKeyObj = null;
+      if (apiKeyString) {
+        activeKeyObj = await validateApiKey(apiKeyString);
+        if (!activeKeyObj) {
+          res.status(401).json({ error: 'Invalid or revoked API key' });
+          return;
+        }
+      }
+
+      // Check Rate Limit
+      const ip = getClientIp(req);
+      const limitCheck = await checkRateLimit(ip, activeKeyObj);
+
+      if (!limitCheck.allowed) {
+        res.status(429).json({
+          error: 'Rate limit exceeded',
+          limit: limitCheck.limit,
+          remaining: limitCheck.remaining,
+          resetHours: limitCheck.resetHours,
+          message: activeKeyObj
+            ? `Your API key has hit its limit of ${limitCheck.limit} requests per 24 hours.`
+            : `Your anonymous IP has hit its daily demo limit of ${limitCheck.limit} requests. Please register for a free API key on the Developer Dashboard to continue.`
+        });
+        return;
+      }
+
+      // Call Gemini model
+      const result = await compareTranslation(source_text, target_text, targetLang);
+
+      // Save to usage log
+      await addUsageLog({
+        userId: activeKeyObj ? activeKeyObj.userId : (req.user ? req.user.id : null),
+        apiKey: activeKeyObj ? activeKeyObj.key : 'free',
+        endpoint: 'compare',
+        textLength: source_text.length + target_text.length,
+        lossesDetected: result.issues.length,
+        success: true,
+        ipAddress: ip
+      });
+
+      // Append rate limit headers
+      res.setHeader('X-RateLimit-Limit', limitCheck.limit);
+      res.setHeader('X-RateLimit-Remaining', limitCheck.remaining - 1);
+
+      res.json(result);
+    } catch (error) {
+      logger.error({ err: error }, 'Error in /api/compare');
+      res.status(500).json({ error: 'Internal server error comparing translation' });
+    }
+  });
+
+  // 3. POST /api/enhance - Main Product: Enrich developer prompt with cultural context block
   app.post('/api/enhance', optionalAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { prompt, text } = req.body;
@@ -280,7 +352,7 @@ export async function createApp() {
     }
   });
 
-  // 3. GET /api/keys - List keys owned by the authenticated developer
+  // 4. GET /api/keys - List keys owned by the authenticated developer
   app.get('/api/keys', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const keys = await getUserKeys(req.user!.id);
@@ -290,7 +362,7 @@ export async function createApp() {
     }
   });
 
-  // 4. POST /api/keys - Generate a new key for the authenticated developer
+  // 5. POST /api/keys - Generate a new key for the authenticated developer
   app.post('/api/keys', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { name, tier } = req.body;
@@ -303,7 +375,7 @@ export async function createApp() {
     }
   });
 
-  // 5. POST /api/keys/revoke - Revoke a key owned by the authenticated developer
+  // 6. POST /api/keys/revoke - Revoke a key owned by the authenticated developer
   app.post('/api/keys/revoke', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { key } = req.body;
@@ -322,7 +394,7 @@ export async function createApp() {
     }
   });
 
-  // 6. GET /api/dashboard/stats - Fetch stats for the authenticated developer's dashboard analytics
+  // 7. GET /api/dashboard/stats - Fetch stats for the authenticated developer's dashboard analytics
   app.get('/api/dashboard/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
@@ -338,6 +410,7 @@ export async function createApp() {
 
       const enhanceCount = logs.filter(l => l.endpoint === 'enhance').length;
       const analyzeCount = logs.filter(l => l.endpoint === 'analyze').length;
+      const compareCount = logs.filter(l => l.endpoint === 'compare').length;
 
       // Sort logs by newest first, take last 15
       const recentLogs = [...logs]
@@ -350,7 +423,8 @@ export async function createApp() {
         lossesAvg,
         endpointsUsage: {
           enhance: enhanceCount,
-          analyze: analyzeCount
+          analyze: analyzeCount,
+          compare: compareCount
         },
         apiKeys: keys,
         recentLogs

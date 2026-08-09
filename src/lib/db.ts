@@ -20,7 +20,7 @@ export interface UsageLog {
   id: string;
   userId?: number | string | null;
   apiKey: string; // 'free' or actual key
-  endpoint: 'analyze' | 'enhance';
+  endpoint: 'analyze' | 'enhance' | 'compare';
   timestamp: string;
   textLength: number;
   lossesDetected: number;
@@ -204,7 +204,7 @@ export async function getDb(): Promise<DbSchema> {
         id: r.id,
         userId: r.user_id,
         apiKey: r.api_key,
-        endpoint: r.endpoint as 'analyze' | 'enhance',
+        endpoint: r.endpoint as 'analyze' | 'enhance' | 'compare',
         timestamp: new Date(r.timestamp).toISOString(),
         textLength: r.text_length,
         lossesDetected: r.losses_detected,
@@ -542,7 +542,7 @@ export async function getUserLogs(userId: number | string): Promise<UsageLog[]> 
         id: row.id,
         userId: row.user_id,
         apiKey: row.api_key,
-        endpoint: row.endpoint as 'analyze' | 'enhance',
+        endpoint: row.endpoint as 'analyze' | 'enhance' | 'compare',
         timestamp: new Date(row.timestamp).toISOString(),
         textLength: row.text_length,
         lossesDetected: row.losses_detected,

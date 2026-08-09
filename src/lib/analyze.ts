@@ -41,6 +41,37 @@ export interface AnalyzeResponse {
   items: LossItem[];
 }
 
+export type Severity = 'low' | 'medium' | 'high';
+
+export interface CompareIssue {
+  fragment: string;
+  short: string;
+  explanation: string;
+  alternative: string;
+  severity: Severity;
+}
+
+export interface CompareResponse {
+  source: string;
+  target: string;
+  score: number | null;
+  verdict: string;
+  issues: CompareIssue[];
+}
+
+const SEVERITY_WEIGHT: Record<Severity, number> = {
+  high: 35,
+  medium: 20,
+  low: 10,
+};
+
+function getVerdict(score: number): string {
+  if (score >= 90) return 'Meaning preserved';
+  if (score >= 70) return 'Minor meaning loss';
+  if (score >= 50) return 'Significant meaning loss';
+  return 'Critical meaning loss';
+}
+
 export async function analyzeText(text: string, targetLanguage: string = 'en'): Promise<AnalyzeResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -131,6 +162,132 @@ If the text is simple, plain, and carries absolutely no hidden cultural context 
     // Graceful fallback to mock data
     return getMockAnalysis(text, targetLanguage);
   }
+}
+
+export async function compareTranslation(
+  source: string,
+  target: string,
+  targetLanguage: string = 'en'
+): Promise<CompareResponse> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return getMockComparison(source, target);
+  }
+
+  try {
+    const ai = getAiClient();
+
+    const systemInstruction = `
+You are a localization QA expert. Your job is to compare a source-language text with a human or machine translation into ${targetLanguage} and detect "losses of meaning": places where the translation flattens cultural, emotional, modal, or politeness nuance that a native speaker of the source language would understand.
+
+Look for:
+1. Modal particles, hedging, face-saving refusals, polite indirectness (e.g. Japanese '行けたら行く', Russian 'да, но нет', Spanish 'mañana') rendered as literal/plain statements.
+2. Tone/shift in register: warmth, sarcasm, distance, politeness level destroyed by a neutral translation.
+3. Diminutives, honorifics, aspect/tense or subjunctive nuance flattened.
+4. Understatement as a cultural default translated too affirmatively (e.g. 'not bad', 'I'm fine').
+
+For each loss found, report:
+- "fragment": the source fragment whose meaning was lost.
+- "short": a one-sentence summary of what is lost.
+- "explanation": why the literal translation fails here.
+- "alternative": a target-language phrase that preserves the intended meaning.
+- "severity": one of "high" (core meaning/refusal inverted or destroyed), "medium" (tone or politeness flattened), "low" (minor nuance or register shift).
+
+Then compute:
+- "score": an integer 0–100 faithfulness score where 100 means the translation fully preserves the source's cultural/emotional meaning.
+- "verdict": a short label: "Meaning preserved", "Minor meaning loss", "Significant meaning loss", or "Critical meaning loss".
+- "issues": the list of losses (empty if the translation preserves all meaningful nuance).
+
+If the source text is plain and unambiguous, or the translation is accurate, return "issues" as an empty list, "score" close to a high value, and the appropriate verdict.
+`;
+
+    const userContent = `
+SOURCE TEXT: "${source}"
+TRANSLATION INTO ${targetLanguage}: "${target}"
+`;
+
+    const response = await ai.models.generateContent({
+      model: getModel(),
+      contents: userContent,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            score: {
+              type: Type.INTEGER,
+              description: '0-100 faithfulness score, higher is better.'
+            },
+            verdict: {
+              type: Type.STRING,
+              description: 'Short verdict label for the translation quality.'
+            },
+            issues: {
+              type: Type.ARRAY,
+              description: 'Lost-meaning issues found in the translation.',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  fragment: {
+                    type: Type.STRING,
+                    description: 'The exact source fragment whose meaning was lost.'
+                  },
+                  short: {
+                    type: Type.STRING,
+                    description: 'One-sentence summary of what is lost.'
+                  },
+                  explanation: {
+                    type: Type.STRING,
+                    description: 'Why the literal translation fails here.'
+                  },
+                  alternative: {
+                    type: Type.STRING,
+                    description: 'A translation that preserves the intended meaning.'
+                  },
+                  severity: {
+                    type: Type.STRING,
+                    description: 'One of: high, medium, low.'
+                  }
+                },
+                required: ['fragment', 'short', 'explanation', 'alternative', 'severity']
+              }
+            }
+          },
+          required: ['score', 'verdict', 'issues']
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    const issues: CompareIssue[] = (parsed.issues || []).map((item: any) => ({
+      fragment: item.fragment || '',
+      short: item.short || '',
+      explanation: item.explanation || '',
+      alternative: item.alternative || '',
+      severity: (item.severity === 'high' || item.severity === 'medium' || item.severity === 'low')
+        ? item.severity
+        : 'medium',
+    }));
+    const score = typeof parsed.score === 'number'
+      ? Math.max(0, Math.min(100, Math.round(parsed.score)))
+      : computeScore(issues);
+    return {
+      source,
+      target,
+      score,
+      verdict: parsed.verdict || (issues.length === 0 ? 'Meaning preserved' : getVerdict(score)),
+      issues,
+    };
+  } catch (error) {
+    logger.error({ err: error }, 'Error calling Gemini API in compareTranslation:');
+    return getMockComparison(source, target);
+  }
+}
+
+function computeScore(issues: CompareIssue[]): number {
+  const score = 100 - issues.reduce((sum, issue) => sum + (SEVERITY_WEIGHT[issue.severity] || 10), 0);
+  return Math.max(0, score);
 }
 
 // Pre-baked beautiful high-fidelity responses to ensure demo site looks and behaves amazingly even if API key has issues
@@ -332,5 +489,148 @@ function getMockAnalysis(text: string, targetLanguage: string): AnalyzeResponse 
         alternative: "Appropriate contextual translation"
       }
     ]
+  };
+}
+
+function normalizeForCompare(s: string): string {
+  return s.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ").replace(/\s+/g, " ");
+}
+
+interface CompareRule {
+  keys: string[];
+  fragment: string;
+  short: string;
+  explanation: string;
+  alternative: string;
+  severity: Severity;
+  lossyTargets: string[];
+  preservedTargets: string[];
+}
+
+const COMPARE_RULES: CompareRule[] = [
+  {
+    keys: ["iketara iku", "行けたら行く"],
+    fragment: "行けたら行く",
+    short: "Вежливый отказ, принятый в японской культуре",
+    explanation: "В японской культуре прямое «нет» разрушает гармонию (Ва). Фраза буквально значит «пойду, если смогу», но носители читают её как мягкий, но окончательный отказ. Перевод, сохраняющий прямое обязательство, теряет истинное намерение.",
+    alternative: "I probably won't be able to make it / Count me out (polite)",
+    severity: "high",
+    lossyTargets: ["i will go if i can", "i ll go if i can", "if i can", "я пойду если смогу"],
+    preservedTargets: ["won t be able", "can t make", "cant make", "count me out", "probably not", "не смогу", "вряд ли", "не приду"]
+  },
+  {
+    keys: ["jein"],
+    fragment: "Jein",
+    short: "Глубокое сомнение или внутреннее противоречие в одном слове",
+    explanation: "Немецкий портманто (Ja + Nein) выражает ответ, который одновременно «да» и «нет», — не путаницу, а структурированный скепсис с оговорками. Передача как «yes-no» стирает условие «да, но только при…».",
+    alternative: "Yes, but with major reservations / It is complicated",
+    severity: "medium",
+    lossyTargets: ["yes no", "yeano", "да нет", "да-нет"],
+    preservedTargets: ["reservation", "complicate", "condition", "it depends", "нуанс", "нюанс"]
+  },
+  {
+    keys: ["manana", "mañana"],
+    fragment: "Mañana",
+    short: "Размытое «когда-нибудь потом», а не завтра",
+    explanation: "В испаноязычных культурах «mañana» культурно означает расслабленное отношение к срокам: «не сегодня, в неопределённом будущем». Дословное «завтра» создаёт ложное ожидание конкретной даты.",
+    alternative: "Sometime in the future / Later on (indefinitely)",
+    severity: "high",
+    lossyTargets: ["tomorrow", "завтра"],
+    preservedTargets: ["not today", "indefinit", "whenever", "later on", "не сегодня", "потом"]
+  },
+  {
+    keys: ["ah bon"],
+    fragment: "Ah, bon?",
+    short: "Скептицизм или вежливое удивление вместо одобрения",
+    explanation: "Во французском «Ah, bon?» — маркер удивления, сомнения или холодного скепсиса, а не «О, хорошо?». Позитивный дословный перевод полностью меняет отношение говорящего.",
+    alternative: "Oh, really? / Is that so? / You don't say!",
+    severity: "medium",
+    lossyTargets: ["oh good", "o good", "о хорошо"],
+    preservedTargets: ["really", "is that so", "you don t say", "неужели", "серьезно", "серьёзно"]
+  },
+  {
+    keys: ["i m fine", "im fine"],
+    fragment: "I'm fine",
+    short: "Вежливое сокрытие обиды или раздражения",
+    explanation: "В англоязычной культуре «I'm fine» в напряжённой ситуации часто означает «я глубоко расстроен, но не хочу обсуждать это сейчас». Дословный перевод «я в порядке» теряет защитный подтекст.",
+    alternative: "Я расстроен, но не хочу говорить об этом",
+    severity: "medium",
+    lossyTargets: ["i am fine", "i m well", "i am well", "я в порядке", "всё хорошо", "все хорошо", "it s fine", "its fine"],
+    preservedTargets: ["upset", "don t want to talk", "not talk about", "не хочу говорить", "обсудить"]
+  },
+  {
+    keys: ["да но нет", "да, но нет"],
+    fragment: "Да, но нет",
+    short: "Вежливое, но категорическое несогласие",
+    explanation: "«Да» здесь — маркер активного слушания, а решает «но нет». Дословный «yes, but no» выглядит как неуверенность, тогда как на самом деле это окончательный отказ.",
+    alternative: "I hear you, but absolutely not / Thanks, but no thanks",
+    severity: "high",
+    lossyTargets: ["yes but no"],
+    preservedTargets: ["absolutely not", "no thanks", "thanks but", "hear you", "не соглас", "нет спасибо", "слыш"]
+  },
+  {
+    keys: ["ну и ладно", "да ну и ладно"],
+    fragment: "Ну и ладно",
+    short: "Горькое смирение, замаскированное под безразличие",
+    explanation: "Комбинация частиц «ну и» сдвигает «ладно» в сторону вынужденного компромисса и скрытой обиды. Перевод «okay then» превращает обиду в нейтральное согласие.",
+    alternative: "Fine, whatever / I guess I have no choice anyway",
+    severity: "medium",
+    lossyTargets: ["okay then", "ok then", "well okay", "well ok", "ладно"],
+    preservedTargets: ["whatever", "no choice", "всё равно", "выбора нет", "смирил"]
+  },
+  {
+    keys: ["неплохо", "в принципе неплохо"],
+    fragment: "Неплохо",
+    short: "Мягкое завуалированное разочарование вместо похвалы",
+    explanation: "Русское «неплохо» в деловом или творческом контексте часто — мягкая критика или сдержанное недовольство, тогда как английское «not bad» обычно комплимент. Дословный перевод переворачивает оценку.",
+    alternative: "Unimpressive / Quite mediocre",
+    severity: "medium",
+    lossyTargets: ["not bad", "not too bad"],
+    preservedTargets: ["mediocre", "unimpressive", "disappointed", "so so", "посредственно", "так себе", "средне", "разочар"]
+  }
+];
+
+function getMockComparison(source: string, target: string): CompareResponse {
+  const normSource = normalizeForCompare(source);
+  const normTarget = normalizeForCompare(target);
+
+  const issues: CompareIssue[] = [];
+
+  for (const rule of COMPARE_RULES) {
+    const sourceMatched = rule.keys.some(key => normSource.includes(key));
+    if (!sourceMatched) continue;
+
+    const preserved = rule.preservedTargets.some(marker => normTarget.includes(marker));
+    if (preserved) continue;
+
+    const lossy = rule.lossyTargets.some(marker => normTarget.includes(marker));
+    if (!lossy) continue;
+
+    issues.push({
+      fragment: rule.fragment,
+      short: rule.short,
+      explanation: rule.explanation,
+      alternative: rule.alternative,
+      severity: rule.severity,
+    });
+  }
+
+  if (issues.length === 0 && !COMPARE_RULES.some(rule => rule.keys.some(key => normSource.includes(key)))) {
+    return {
+      source,
+      target,
+      score: null,
+      verdict: "Unable to verify (no known demo pattern matched)",
+      issues: [],
+    };
+  }
+
+  const score = computeScore(issues);
+  return {
+    source,
+    target,
+    score,
+    verdict: issues.length === 0 ? "Meaning preserved" : getVerdict(score),
+    issues,
   };
 }

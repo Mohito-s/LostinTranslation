@@ -5,12 +5,15 @@ description: Use when adding a new language, region, dialect, culture example, o
 
 # LostInTranslation — добавление нового примера «культурной потери»
 
-Mock-правила живут в ТРЁХ местах, и их надо менять согласованно:
+Mock-правила живут в НЕСКОЛЬКИХ местах, и их надо менять согласованно:
 
 1. `src/lib/analyze.ts` → `getMockAnalysis()` — ответ для `POST /api/analyze`.
-2. `src/lib/enhance.ts` → `getMockEnhancement()` — контекстный блок для `POST /api/enhance`.
-3. `src/lib/analyze.test.ts` — как минимум один тест на новый кейс (лучше и в
-   `enhance` тоже, если есть покрытие).
+2. `src/lib/analyze.ts` → `COMPARE_RULES` в `getMockComparison()` — QA-режим
+   `POST /api/compare`: для каждого правила нужны `lossyTargets` (дословные переводы,
+   которые «сплющивают» смысл) и `preservedTargets` (переводы, сохраняющие намерение).
+3. `src/lib/enhance.ts` → `getMockEnhancement()` — контекстный блок для `POST /api/enhance`.
+4. `src/lib/analyze.test.ts` — минимум по тесту на каждый кейс для `analyze` и
+   `compare` (и в `enhance`, если есть покрытие).
 
 ## Как добавить кейс
 
