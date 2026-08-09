@@ -1,6 +1,7 @@
 import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 // Define DB Interfaces
 export interface ApiKey {
@@ -128,30 +129,36 @@ async function bootstrapDb() {
   // Handle local file initialization if in local mode
   if (!isPostgres) {
     if (!fs.existsSync(LOCAL_DB_PATH)) {
+      const seedDemoKeys = process.env.SEED_DEMO_KEYS === 'true';
+      if (seedDemoKeys) {
+        console.warn('SEED_DEMO_KEYS=true: seeding publicly-known demo API keys. Disable this in production!');
+      }
       const initialDb: DbSchema = {
         users: [],
-        apiKeys: [
-          {
-            id: 'key_default_1',
-            key: 'ltk_demokey12345',
-            name: 'Default Production Key',
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            tier: 'paid',
-            usageCount: 0,
-            userId: null
-          },
-          {
-            id: 'key_default_2',
-            key: 'ltk_freekey98765',
-            name: 'Sandbox Free Key',
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            tier: 'free',
-            usageCount: 0,
-            userId: null
-          }
-        ],
+        apiKeys: seedDemoKeys
+          ? [
+              {
+                id: 'key_default_1',
+                key: 'ltk_demokey12345',
+                name: 'Default Production Key',
+                status: 'active',
+                createdAt: new Date().toISOString(),
+                tier: 'paid',
+                usageCount: 0,
+                userId: null
+              },
+              {
+                id: 'key_default_2',
+                key: 'ltk_freekey98765',
+                name: 'Sandbox Free Key',
+                status: 'active',
+                createdAt: new Date().toISOString(),
+                tier: 'free',
+                usageCount: 0,
+                userId: null
+              }
+            ]
+          : [],
         usageLogs: []
       };
       fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(initialDb, null, 2), 'utf-8');
@@ -335,13 +342,10 @@ export async function getUserById(id: number | string): Promise<User | null> {
 
 export async function generateApiKey(name: string, tier: 'free' | 'paid', userId: number | string): Promise<ApiKey> {
   await bootstrapDb();
-  const id = 'key_' + Math.random().toString(36).substring(2, 11);
+  const id = 'key_' + crypto.randomBytes(6).toString('hex');
   
-  // Generate random 24 hex characters for key
-  const randomBytes = Array.from({ length: 24 }, () => 
-    Math.floor(Math.random() * 16).toString(16)
-  ).join('');
-  const key = `ltk_${randomBytes}`;
+  // Generate 24 hex characters (12 random bytes) for the token
+  const key = `ltk_${crypto.randomBytes(12).toString('hex')}`;
 
   const newKey: ApiKey = {
     id,
@@ -470,7 +474,7 @@ export async function getUserKeys(userId: number | string): Promise<ApiKey[]> {
 
 export async function addUsageLog(log: Omit<UsageLog, 'id' | 'timestamp'>): Promise<void> {
   await bootstrapDb();
-  const id = 'log_' + Math.random().toString(36).substring(2, 11);
+  const id = 'log_' + crypto.randomBytes(6).toString('hex');
   const timestamp = new Date().toISOString();
 
   // Resolve matching key to find associated user_id if present

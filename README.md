@@ -5,34 +5,47 @@
   <img src="https://img.shields.io/badge/Node.js-v18%2B-emerald.svg" alt="Node.js Version" />
   <img src="https://img.shields.io/badge/Framework-React%2018%20%2B%20Vite-blue.svg" alt="React & Vite" />
   <img src="https://img.shields.io/badge/Database-PostgreSQL%20%2F%20Supabase-darkblue.svg" alt="PostgreSQL / Supabase" />
-  <img src="https://img.shields.io/badge/AI_Engine-Gemini_Pro-violet.svg" alt="Gemini Engine" />
+  <img src="https://img.shields.io/badge/AI_Engine-Gemini-violet.svg" alt="Gemini Engine" />
 </p>
 
 ---
 
 ### [RU] Описание проекта
 
-**LostInTranslation API** — это умный лингвистический middleware-слой для обогащения промтов ИИ глубоким культурным, эмоциональным, вежливым и грамматическим контекстом на разных языках (включая русский, японский, немецкий, испанский и др.). Он улавливает тонкие оттенки смысла, скрытые намерения и вежливость собеседников, делая ответы downstream-моделей (GPT, Claude, Gemini) **на 98% точнее** и контекстуально вернее, предотвращая смысловые потери при обычном машинном переводе.
+**LostInTranslation API** — это умный лингвистический middleware-слой для обогащения промтов ИИ глубоким культурным, эмоциональным, вежливым и грамматическим контекстом на разных языках (включая русский, японский, немецкий, испанский и др.). Он улавливает тонкие оттенки смысла, скрытые намерения и вежливость собеседников, предотвращая смысловые потери при обычном машинном переводе.
 
 ### [EN] Project Description
 
-**LostInTranslation API** is an intelligent linguistic middleware layer designed to enrich AI prompts with deep cultural, emotional, polite, and grammatical context across multiple languages (including Russian, Japanese, German, Spanish, etc.). It captures subtle nuances, hidden intents, and speaker politeness, making the outputs of downstream models (such as GPT, Claude, Gemini) **up to 98% more accurate** and culturally aligned, preventing semantic erosion caused by standard machine translation.
+**LostInTranslation API** is an intelligent linguistic middleware layer designed to enrich AI prompts with deep cultural, emotional, polite, and grammatical context across multiple languages (including Russian, Japanese, German, Spanish, etc.). It captures subtle nuances, hidden intents, and speaker politeness, preventing semantic erosion caused by standard machine translation.
 
 ---
 
-## 🗺️ Содержание / Table of Contents
+## Содержание / Table of Contents
 
-- [🌐 LostInTranslation API (LIT API) 🛰️](#-lostintranslation-api-lit-api-️)
-    - [🎨 Архитектура Системы / System Architecture](#-архитектура-системы--system-architecture)
-    - [⚖️ Лицензия / License (AGPL-3.0)](#️-лицензия--license-agpl-30)
-    - [🔒 Безопасность и Аудит Ключей / Security & Secret Prevention](#-безопасность-и-аудит-ключей--security--secret-prevention)
-    - [💾 База Данных: PostgreSQL + Supabase / Database Integration](#-база-данных-postgresql--supabase--database-integration)
-    - [🚀 Быстрый старт / Quick Start](#-быстрый-старт--quick-start)
-    - [✨ Как Сделать Красивый GitHub Профиль / Premium GitHub Guide](#-как-сделать-красивый-github-профиль--premium-github-guide)
+- [Возможности / Features](#-возможности--features)
+- [Архитектура / System Architecture](#-архитектура--system-architecture)
+- [API Endpoints](#-api-endpoints)
+- [Конфигурация / Configuration](#-конфигурация--configuration)
+- [Быстрый старт / Quick Start](#-быстрый-старт--quick-start)
+- [Структура проекта / Project Structure](#-структура-проекта--project-structure)
+- [База данных / Database](#-база-данных--database)
+- [Разработка и контрибьюция / Contributing](#-разработка-и-контрибьюция--contributing)
+- [Лицензия / License (AGPL-3.0)](#-лицензия--license-agpl-30)
 
 ---
 
-## 🎨 Архитектура Системы / System Architecture
+## ✨ Возможности / Features
+
+- **Двойной режим анализа:** `POST /api/analyze` — находит «потери смысла» в тексте; `POST /api/enhance` — обогащает исходный промт контекстным блоком перед отправкой в целевую LLM.
+- **Культурная глубина:** модальные частицы, вежливость, хеджирование, умаление (understatement), суффиксы и видовые формы глаголов (RU, JA, DE, ES, FR и др.).
+- **Портал разработчика:** регистрация, JWT-сессия, генерация/отзыв API-ключей, дашборд со статистикой использования.
+- **Rate limiting** по IP и по ключам (free: 10/день по IP, 50/день free-ключ, 1000/день paid-ключ).
+- **Двойное хранилище:** локальный JSON-файл (fallback) или PostgreSQL/Supabase.
+- **Гарантированный дев-режим:** без `GEMINI_API_KEY` сервер работает на качественных mock-ответах.
+
+---
+
+## 🎨 Архитектура / System Architecture
 
 ```text
 ┌────────────────────────────────────────────────────────┐
@@ -45,11 +58,11 @@
 ┌───────────────────────────▼────────────────────────────┐
 │                  EXPRESS BACKEND GATEWAY               │
 │               - Rate Limiter (IP & API Keys)           │
-│               - Crypto Auth Module (PBKDF2)            │
+│               - Crypto Auth Module (PBKDF2 + HMAC)     │
 └───────────────────────────┬────────────────────────────┘
                             ├────────────────────────────┐
 ┌───────────────────────────▼────────────┐  ┌────────────▼────────────┐
-│             AI ENGINE                  │  │     PERSISTENCE LAYER   │
+│             AI ENGINE                  │  │    PERSISTENCE LAYER    │
 │       - Gemini SDK Integration         │  │  - Primary: Supabase/PG │
 │       - Semantic Loss Analysis         │  │  - Fallback: Local JSON │
 │       - Real-time Context Injector     │  │    (Fully Git-Ignored!) │
@@ -58,92 +71,122 @@
 
 ---
 
-## ⚖️ Лицензия / License (AGPL-3.0)
+## 🔌 API Endpoints
 
-Этот проект распространяется под свободной лицензией **GNU Affero General Public License v3.0 (AGPL-3.0)**. 
+| Метод | URL | Авторизация | Описание |
+|-------|-----|-------------|----------|
+| `POST` | `/api/analyze` | опционально (ключ или JWT) | Анализ текста на культурные потери смысла |
+| `POST` | `/api/enhance` | **обязателен API-ключ** (`x-api-key` / `Bearer`) | Обогащение промта культурным контекстом |
+| `POST` | `/api/auth/register` | — | Регистрация разработчика |
+| `POST` | `/api/auth/login` | — | Вход, получение JWT |
+| `GET`  | `/api/auth/me` | JWT | Профиль текущего пользователя |
+| `GET`  | `/api/keys` | JWT | Список ключей |
+| `POST` | `/api/keys` | JWT | Генерация нового ключа `{ name, tier }` |
+| `POST` | `/api/keys/revoke` | JWT | Отзыв ключа `{ key }` |
+| `GET`  | `/api/dashboard/stats` | JWT | Статистика дашборда |
 
-### Что это значит?
-* **SaaS Clause (Доступ через сеть):** Если вы запускаете этот проект удаленно на сервере в облаке и предоставляете к нему доступ пользователям через сеть (как API, веб-сервис или SaaS), **вы обязаны предоставить конечным пользователям возможность скачать полную версию исходного кода вашего сервиса** (включая любые ваши изменения, сделанные в коде) под той же лицензией AGPL-3.0.
-* **Раскрытие исходного кода:** Любые модификации или производные работы также должны быть открыты под лицензией AGPL-3.0.
-* **Никаких коммерческих тайн:** Вы не можете использовать данный код в закрытых коммерческих SaaS-решениях без открытия вашего исходного кода.
+### Пример: `POST /api/enhance`
+
+```bash
+curl -X POST http://localhost:3000/api/enhance \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ltk_your_api_key" \
+  -d '{
+    "prompt": "Translate the following message and summarize the sender intention",
+    "text": "行けたら行く"
+  }'
+```
 
 ---
 
-## 🔒 Безопасность и Аудит Ключей / Security & Secret Prevention
+## ⚙️ Конфигурация / Configuration
 
-Репозиторий проекта полностью открыт. Для защиты ваших данных была произведена глубокая чистка секретов:
-1. **Никаких захардкоженных ключей:** Все пароли, API-ключи Gemini и строки подключения баз данных считываются исключительно из переменных окружения (`process.env`).
-2. **Безопасный Git-Ignore:** Файлы конфигурации `.env`, логи серверов (`*.log`), а также локальный файл базы данных (`local_db.json`) принудительно внесены в `.gitignore`. Вы можете быть спокойны — ваши личные данные пользователей и хэши паролей никогда не попадут в открытый доступ на GitHub.
-
----
-
-## 💾 База Данных: PostgreSQL + Supabase / Database Integration
-
-LostInTranslation API поддерживает **двойной режим хранения данных**:
-* **Локальный (Fallback):** По умолчанию при отсутствии базы данных сервер создает безопасный локальный зашифрованный JSON-файл (`local_db.json`) для хранения учетных записей разработчиков, API-токенов и логов.
-* **Профессиональный (Supabase/PostgreSQL):** Для переключения на полноценную СУБД просто укажите переменную `DATABASE_URL` в файле `.env`. Система автоматически переключится на PostgreSQL, создаст необходимые таблицы при первом запуске и будет использовать пул соединений.
+| Переменная | Обязательна | Описание |
+|------------|-------------|----------|
+| `GEMINI_API_KEY` | да (для реальных вызовов ИИ) | Ключ Google AI Studio |
+| `SESSION_SECRET` | **да в проде** | Секрет подписи сессионных токенов. Без него прод не запустится |
+| `DATABASE_URL` | нет | PostgreSQL/Supabase. Пусто → локальный JSON |
+| `APP_URL` | нет | Публичный URL приложения (инжектится AI Studio) |
+| `SEED_DEMO_KEYS` | нет | `true` = сидировать общеизвестные демо-ключи |
 
 ---
 
 ## 🚀 Быстрый старт / Quick Start
 
 ### 1. Подготовка окружения
-Создайте файл `.env` в корневой папке проекта на основе примера:
 ```bash
 cp .env.example .env
 ```
-Заполните обязательные переменные:
-```env
-# Токен ИИ для анализа культурного контекста
-GEMINI_API_KEY=your_gemini_api_key_here
+Заполните обязательные переменные: `GEMINI_API_KEY` и `SESSION_SECRET` (для прода).
 
-# Опционально: URL подключения к PostgreSQL/Supabase.
-# Если оставить пустым, включится безопасный локальный режим local_db.json
-DATABASE_URL=postgresql://postgres:...
+### 2. Установка и запуск
+```bash
+npm install          # установка зависимостей
+npm run dev          # запуск разработки (React HMR + Node server)
+```
+Откройте `http://localhost:3000`.
+
+### 3. Проверка качества
+```bash
+npm run lint         # tsc --noEmit
+npm test             # vitest run
 ```
 
-### 2. Установка и Запуск
+### 4. Сборка для Production
 ```bash
-# Установка зависимостей
-npm install
-
-# Запуск в режиме разработки (React HMR + Node Server)
-npm run dev
+npm run build        # сборка клиента и бэкенда в dist/
+npm run start        # запуск собранного сервера
 ```
-Откройте браузер по адресу: `http://localhost:3000`.
 
-### 3. Сборка для Production
+### 5. Docker
 ```bash
-# Сборка клиентской части и бэкенд-сервера
-npm run build
-
-# Запуск скомпилированного сервера
-npm run start
+docker build -t lost-in-translation .
+docker run -p 3000:3000 --env-file .env lost-in-translation
 ```
 
 ---
 
-## ✨ Как Сделать Красивый GitHub Профиль / Premium GitHub Guide
+## 📁 Структура проекта / Project Structure
 
-Чтобы ваш репозиторий привлекал внимание работодателей и разработчиков, а профиль выглядел дорого и профессионально, следуйте этому пошаговому руководству:
+```text
+server.ts                  — Express-гейтвей (auth, keys, rate limit, статика)
+src/
+├── lib/
+│   ├── auth.ts            — PBKDF2-хэширование, HMAC-токены, middleware
+│   ├── db.ts              — хранилище: локальный JSON или PostgreSQL/Supabase
+│   ├── analyze.ts         — /api/analyze: поиск культурных потерь (Gemini + mock)
+│   ├── enhance.ts         — /api/enhance: обогащение промтов (Gemini + mock)
+│   └── rateLimit.ts       — лимиты по IP и API-ключам
+├── components/            — UI-компоненты (DemoWidget, PromptSimulator и др.)
+├── App.tsx                — SPA-оболочка
+├── main.tsx
+└── index.css
+.dockerignore              — исключения для Docker-сборки
+.github/                   — CI-воркфлоу и шаблоны issue/PR
+```
 
-### 1. Создайте Персональный Профиль-визитку (Profile README)
-* Создайте на GitHub новый публичный репозиторий, имя которого **точно совпадает с вашим ником** (например, если ваш ник `developer777`, репозиторий должен называться `developer777`).
-* GitHub предложит создать в нем специальный `README.md`. Это ваша главная страница!
-* **Что туда добавить:**
-  * Стильное анимированное приветствие.
-  * Ваши ключевые технологии в виде ярких бейджей (используйте [Shields.io](https://shields.io)).
-  * Динамическую статистику GitHub (используйте [GitHub Readme Stats](https://github.com/anuraghazra/github-readme-stats)).
+---
 
-### 2. Оформите сам репозиторий (Repository Landing Page)
-* **About (Справа вверху):** Заполните короткое, емкое описание проекта на английском, добавьте актуальные теги (например, `ai-middleware`, `prompt-engineering`, `linguistics`, `react`, `typescript`, `supabase`) и укажите ссылку на работающее демо.
-* **Social Preview Image:** Зайдите в *Settings -> General -> Social preview* и загрузите красивую картинку (обложку) вашего проекта размером 1280x640. Проекты с обложками получают на 400% больше внимания!
-* **Release:** Опубликуйте релиз (справа на панели), присвойте ему версию `v1.0.0` и напишите красивый список изменений (changelog).
+## 💾 База данных / Database
 
-### 3. Используйте Интерактивные Бейджи в README
-Вы можете конструировать любые бейджи на сайте [Shields.io](https://shields.io). Пример ссылки:
-`https://img.shields.io/badge/Название-Текст-цвет.svg`
-Они делают документацию структурированной и приятной для чтения.
+- **Локальный режим (по умолчанию):** при отсутствии `DATABASE_URL` сервер создаёт `local_db.json` (`.gitignore`). При первом запуске сидируются демо-ключи, **только если** `SEED_DEMO_KEYS=true`.
+- **PostgreSQL / Supabase:** укажите `DATABASE_URL` — сервер сам создаст таблицы `users`, `api_keys`, `usage_logs` при первом запуске.
+- **Firebase Firestore:** правила в `firestore.rules`; шаблон интеграции — в `TMA_DB_GUIDE.md`.
+
+---
+
+## 🤝 Разработка и контрибьюция / Contributing
+
+Проект открыт для вклада. Смотрите [CONTRIBUTING.md](CONTRIBUTING.md) и [ROADMAP.md](ROADMAP.md). Используйте шаблоны [issues](.github/ISSUE_TEMPLATE/) и [PR](.github/PULL_REQUEST_TEMPLATE.md).
+
+---
+
+## ⚖️ Лицензия / License (AGPL-3.0)
+
+Этот проект распространяется под свободной лицензией **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+- **SaaS Clause:** если вы запускаете этот проект как сетевой сервис/API, вы обязаны предоставить пользователям доступ к полному исходному коду (включая ваши изменения) под AGPL-3.0.
+- **Раскрытие изменений:** любые модификации и производные работы также должны быть открыты под AGPL-3.0.
 
 ---
 

@@ -6,8 +6,17 @@ const ITERATIONS = 10000;
 const KEY_LENGTH = 64;
 const DIGEST = 'sha512';
 
-// Standard session token secret - loaded from env or fallback to a persistent default
-const JWT_SECRET = process.env.SESSION_SECRET || 'lost_in_translation_secure_secret_key_12345';
+// Session token secret - must be provided via env in production.
+// In development a warning is shown and an insecure fallback is used so the
+// demo keeps working out of the box. Never rely on this fallback in production.
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET environment variable is required in production.');
+  }
+  console.warn('[auth] SESSION_SECRET is not set. Using an insecure development fallback. Set SESSION_SECRET in production.');
+}
+const JWT_SECRET = SESSION_SECRET || 'lit_insecure_dev_secret_only_for_local_demo';
 
 /**
  * Hashes a plaintext password using PBKDF2 with a random salt.
@@ -53,10 +62,13 @@ export interface AuthenticatedUser {
 export function verifyToken(token: string): AuthenticatedUser | null {
   try {
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const parts = decoded.split('.');
-    if (parts.length !== 2) return null;
-    
-    const [payload, signature] = parts;
+    // The signature is hex (no dots) and the payload may contain dots in the
+    // email (e.g. first.last@example.com), so split on the LAST dot.
+    const sepIndex = decoded.lastIndexOf('.');
+    if (sepIndex <= 0 || sepIndex === decoded.length - 1) return null;
+
+    const payload = decoded.slice(0, sepIndex);
+    const signature = decoded.slice(sepIndex + 1);
     const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
     if (signature !== expectedSignature) return null;
     
