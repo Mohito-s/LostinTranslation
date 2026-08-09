@@ -1,4 +1,10 @@
 import { GoogleGenAI, Type } from '@google/genai';
+import logger from './logger';
+
+// Model can be overridden via GEMINI_MODEL (defaults to gemini-3.5-flash).
+function getModel(): string {
+  return process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+}
 
 // Initialize the Gemini client lazily
 let aiClient: GoogleGenAI | null = null;
@@ -7,7 +13,7 @@ function getAiClient(): GoogleGenAI {
   if (!aiClient) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn('GEMINI_API_KEY is not defined. Using mock fallback mode.');
+      logger.warn('GEMINI_API_KEY is not defined. Using mock fallback mode.');
     }
     aiClient = new GoogleGenAI({
       apiKey: apiKey || 'MOCK_KEY_FALLBACK',
@@ -65,7 +71,7 @@ If the text is simple, plain, and carries absolutely no hidden cultural context 
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: getModel(),
       contents: `Analyze the following text: "${text}"`,
       config: {
         systemInstruction,
@@ -121,7 +127,7 @@ If the text is simple, plain, and carries absolutely no hidden cultural context 
       items: parsed.items || []
     };
   } catch (error) {
-    console.error('Error calling Gemini API in analyzeText:', error);
+    logger.error({ err: error }, 'Error calling Gemini API in analyzeText:');
     // Graceful fallback to mock data
     return getMockAnalysis(text, targetLanguage);
   }

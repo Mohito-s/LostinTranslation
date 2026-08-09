@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
+import logger from './logger';
 
 const SALT_LENGTH = 16;
 const ITERATIONS = 10000;
@@ -14,7 +15,7 @@ if (!SESSION_SECRET) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET environment variable is required in production.');
   }
-  console.warn('[auth] SESSION_SECRET is not set. Using an insecure development fallback. Set SESSION_SECRET in production.');
+  logger.warn('[auth] SESSION_SECRET is not set. Using an insecure development fallback. Set SESSION_SECRET in production.');
 }
 const JWT_SECRET = SESSION_SECRET || 'lit_insecure_dev_secret_only_for_local_demo';
 

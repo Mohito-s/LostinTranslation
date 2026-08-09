@@ -1,4 +1,10 @@
 import { GoogleGenAI, Type } from '@google/genai';
+import logger from './logger';
+
+// Model can be overridden via GEMINI_MODEL (defaults to gemini-3.5-flash).
+function getModel(): string {
+  return process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+}
 
 // Lazy client initialization
 let aiClient: GoogleGenAI | null = null;
@@ -72,7 +78,7 @@ SOURCE TEXT TO PROCESS: "${text}"
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: getModel(),
       contents: userContent,
       config: {
         systemInstruction,
@@ -105,7 +111,7 @@ SOURCE TEXT TO PROCESS: "${text}"
       losses_detected: parsed.losses_detected ?? 0
     };
   } catch (error) {
-    console.error('Error calling Gemini API in enhancePrompt:', error);
+    logger.error({ err: error }, 'Error calling Gemini API in enhancePrompt:');
     return getMockEnhancement(prompt, text);
   }
 }

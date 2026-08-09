@@ -3,7 +3,10 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import cors from 'cors';
+import { pathToFileURL } from 'url';
 import { createServer as createViteServer } from 'vite';
+import logger from './src/lib/logger';
 
 // Import local business logic
 import { 
@@ -30,12 +33,23 @@ import { analyzeText } from './src/lib/analyze';
 import { enhancePrompt } from './src/lib/enhance';
 import { checkRateLimit } from './src/lib/rateLimit';
 
-async function startServer() {
+export async function createApp() {
   const app = express();
-  const PORT = 3000;
 
   // Middleware to parse json bodies
   app.use(express.json());
+
+  // CORS: '*' by default (public API), or a comma-separated allowlist via CORS_ORIGIN
+  const corsOrigin = process.env.CORS_ORIGIN || '*';
+  app.use(cors({
+    origin: corsOrigin === '*' ? true : corsOrigin.split(',').map(s => s.trim()),
+  }));
+
+  // Trust proxies when running behind Cloud Run / nginx (TRUST_PROXY=true or hop count).
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy) {
+    app.set('trust proxy', trustProxy === 'true' ? true : Number(trustProxy));
+  }
 
   // Helper to extract client IP address accurately
   const getClientIp = (req: express.Request): string => {
@@ -75,7 +89,7 @@ async function startServer() {
         user: { id: newUser.id, email: newUser.email }
       });
     } catch (error: any) {
-      console.error('Error registering user:', error);
+      logger.error({ err: error }, 'Error registering user');
       res.status(500).json({ error: 'Failed to register user: ' + error.message });
     }
   });
@@ -105,7 +119,7 @@ async function startServer() {
         user: { id: user.id, email: user.email }
       });
     } catch (error) {
-      console.error('Error logging in:', error);
+      logger.error({ err: error }, 'Error logging in');
       res.status(500).json({ error: 'Failed to login' });
     }
   });
@@ -184,7 +198,7 @@ async function startServer() {
       
       res.json(result);
     } catch (error) {
-      console.error('Error in /api/analyze:', error);
+      logger.error({ err: error }, 'Error in /api/analyze');
       res.status(500).json({ error: 'Internal server error analyzing text' });
     }
   });
@@ -261,7 +275,7 @@ async function startServer() {
 
       res.json(result);
     } catch (error) {
-      console.error('Error in /api/enhance:', error);
+      logger.error({ err: error }, 'Error in /api/enhance');
       res.status(500).json({ error: 'Internal server error enhancing prompt' });
     }
   });
@@ -284,7 +298,7 @@ async function startServer() {
       const newKey = await generateApiKey(name, keyTier, req.user!.id);
       res.status(201).json(newKey);
     } catch (error) {
-      console.error('Error generating API key:', error);
+      logger.error({ err: error }, 'Error generating API key');
       res.status(500).json({ error: 'Failed to generate key' });
     }
   });
@@ -342,7 +356,7 @@ async function startServer() {
         recentLogs
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      logger.error({ err: error }, 'Error fetching stats');
       res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
   });
@@ -351,7 +365,7 @@ async function startServer() {
   // VITE / STATIC SERVING
   // ==========================================
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV === 'development') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -365,9 +379,18 @@ async function startServer() {
     });
   }
 
+  return app;
+}
+
+async function startServer() {
+  const app = await createApp();
+  const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`LostInTranslation API full-stack server listening at http://0.0.0.0:${PORT}`);
+    logger.info(`LostInTranslation API listening at http://0.0.0.0:${PORT}`);
   });
 }
 
-startServer();
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  startServer();
+}

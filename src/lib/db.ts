@@ -2,6 +2,7 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import logger from './logger';
 
 // Define DB Interfaces
 export interface ApiKey {
@@ -56,13 +57,13 @@ if (dbUrl) {
         : false,
     });
     isPostgres = true;
-    console.log('PostgreSQL/Supabase pool configured. Running on Postgres mode.');
+    logger.info('PostgreSQL/Supabase pool configured. Running on Postgres mode.');
   } catch (err) {
-    console.error('Failed to configure PostgreSQL pool, falling back to local file:', err);
+    logger.error({ err: err }, 'Failed to configure PostgreSQL pool, falling back to local file:');
     isPostgres = false;
   }
 } else {
-  console.log('No DATABASE_URL found. Running on Local File Database mode.');
+  logger.info('No DATABASE_URL found. Running on Local File Database mode.');
 }
 
 // Database bootstrapping on startup/first use
@@ -76,7 +77,7 @@ async function bootstrapDb() {
     try {
       const client = await pool.connect();
       try {
-        console.log('Bootstrapping PostgreSQL tables...');
+        logger.info('Bootstrapping PostgreSQL tables...');
         // Create users table
         await client.query(`
           CREATE TABLE IF NOT EXISTS users (
@@ -116,12 +117,12 @@ async function bootstrapDb() {
           );
         `);
 
-        console.log('PostgreSQL database bootstrapping completed successfully.');
+        logger.info('PostgreSQL database bootstrapping completed successfully.');
       } finally {
         client.release();
       }
     } catch (err) {
-      console.error('Failed to bootstrap PostgreSQL tables, falling back to local file mode.', err);
+      logger.error({ err: err }, 'Failed to bootstrap PostgreSQL tables, falling back to local file mode.');
       isPostgres = false;
     }
   }
@@ -131,7 +132,7 @@ async function bootstrapDb() {
     if (!fs.existsSync(LOCAL_DB_PATH)) {
       const seedDemoKeys = process.env.SEED_DEMO_KEYS === 'true';
       if (seedDemoKeys) {
-        console.warn('SEED_DEMO_KEYS=true: seeding publicly-known demo API keys. Disable this in production!');
+        logger.warn('SEED_DEMO_KEYS=true: seeding publicly-known demo API keys. Disable this in production!');
       }
       const initialDb: DbSchema = {
         users: [],
@@ -162,7 +163,7 @@ async function bootstrapDb() {
         usageLogs: []
       };
       fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(initialDb, null, 2), 'utf-8');
-      console.log('Initialized clean local database at', LOCAL_DB_PATH);
+      logger.info({ path: LOCAL_DB_PATH }, 'Initialized clean local database');
     }
   }
 }
@@ -213,7 +214,7 @@ export async function getDb(): Promise<DbSchema> {
 
       return { users, apiKeys, usageLogs };
     } catch (err) {
-      console.error('Error fetching data from PostgreSQL, falling back to local file:', err);
+      logger.error({ err: err }, 'Error fetching data from PostgreSQL, falling back to local file:');
     }
   }
 
@@ -222,7 +223,7 @@ export async function getDb(): Promise<DbSchema> {
     const raw = fs.readFileSync(LOCAL_DB_PATH, 'utf-8');
     return JSON.parse(raw) as DbSchema;
   } catch (err) {
-    console.error('Failed to read local DB, returning empty schema:', err);
+    logger.error({ err: err }, 'Failed to read local DB, returning empty schema:');
     return { users: [], apiKeys: [], usageLogs: [] };
   }
 }
@@ -232,7 +233,7 @@ function saveLocalDb(data: DbSchema): void {
   try {
     fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
-    console.error('Failed to save local database:', err);
+    logger.error({ err: err }, 'Failed to save local database:');
   }
 }
 
@@ -258,7 +259,7 @@ export async function createUser(email: string, passwordHash: string): Promise<U
         createdAt: new Date(row.created_at).toISOString()
       };
     } catch (err) {
-      console.error('Error in Postgres createUser:', err);
+      logger.error({ err: err }, 'Error in Postgres createUser:');
       throw err;
     }
   }
@@ -299,7 +300,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
         createdAt: new Date(row.created_at).toISOString()
       };
     } catch (err) {
-      console.error('Error in Postgres getUserByEmail:', err);
+      logger.error({ err: err }, 'Error in Postgres getUserByEmail:');
       return null;
     }
   }
@@ -325,7 +326,7 @@ export async function getUserById(id: number | string): Promise<User | null> {
         createdAt: new Date(row.created_at).toISOString()
       };
     } catch (err) {
-      console.error('Error in Postgres getUserById:', err);
+      logger.error({ err: err }, 'Error in Postgres getUserById:');
       return null;
     }
   }
@@ -366,7 +367,7 @@ export async function generateApiKey(name: string, tier: 'free' | 'paid', userId
       );
       return newKey;
     } catch (err) {
-      console.error('Error in Postgres generateApiKey:', err);
+      logger.error({ err: err }, 'Error in Postgres generateApiKey:');
       throw err;
     }
   }
@@ -389,7 +390,7 @@ export async function revokeApiKey(keyString: string, userId: number | string): 
       );
       return res.rows.length > 0;
     } catch (err) {
-      console.error('Error in Postgres revokeApiKey:', err);
+      logger.error({ err: err }, 'Error in Postgres revokeApiKey:');
       return false;
     }
   }
@@ -427,7 +428,7 @@ export async function validateApiKey(keyString: string): Promise<ApiKey | null> 
         usageCount: row.usage_count || 0
       };
     } catch (err) {
-      console.error('Error in Postgres validateApiKey:', err);
+      logger.error({ err: err }, 'Error in Postgres validateApiKey:');
       return null;
     }
   }
@@ -458,7 +459,7 @@ export async function getUserKeys(userId: number | string): Promise<ApiKey[]> {
         usageCount: row.usage_count || 0
       }));
     } catch (err) {
-      console.error('Error in Postgres getUserKeys:', err);
+      logger.error({ err: err }, 'Error in Postgres getUserKeys:');
       return [];
     }
   }
@@ -503,7 +504,7 @@ export async function addUsageLog(log: Omit<UsageLog, 'id' | 'timestamp'>): Prom
       }
       return;
     } catch (err) {
-      console.error('Error in Postgres addUsageLog:', err);
+      logger.error({ err: err }, 'Error in Postgres addUsageLog:');
     }
   }
 
@@ -549,7 +550,7 @@ export async function getUserLogs(userId: number | string): Promise<UsageLog[]> 
         ipAddress: row.ip_address
       }));
     } catch (err) {
-      console.error('Error in Postgres getUserLogs:', err);
+      logger.error({ err: err }, 'Error in Postgres getUserLogs:');
       return [];
     }
   }
