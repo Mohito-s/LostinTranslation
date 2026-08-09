@@ -1,10 +1,9 @@
+// Load environment variables FIRST, before any module that reads process.env
+// at import time (auth.ts reads SESSION_SECRET, db.ts reads DATABASE_URL).
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
-import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
-
-// Load environment variables
-dotenv.config();
 
 // Import local business logic
 import { 
