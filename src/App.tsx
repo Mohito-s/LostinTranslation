@@ -124,7 +124,7 @@ const TRANSLATIONS = {
     pricingFreeBullet4: "Поддержка боевых LLM промтов",
     pricingFreeBtn: "Создать бесплатный ключ",
     pricingProTitle: "PRODUCTION PRO",
-    pricingProPrice: "$9",
+    pricingProPrice: "$5",
     pricingProPeriod: "/ месяц",
     pricingProDesc: "Для полноценных боевых ИИ-приложений, умных ассистентов, CRM-анализа и ботов поддержки.",
     pricingProBullet1: "Полный доступ к обоим эндпоинтам",
@@ -162,7 +162,7 @@ const TRANSLATIONS = {
     dashKeyNamePlaceholder: "Например: Prod App Assistant, Mobile Bot",
     dashKeyTierLabel: "Тарифный план для ключа:",
     dashKeyTierFree: "Sandbox Free (50 запр/день)",
-    dashKeyTierPaid: "Production Pro ($9/мес - 1000 запр/день)",
+    dashKeyTierPaid: "Production Pro ($5/мес - 1000 запр/день)",
     dashKeyGenBtn: "Выпустить ключ",
     dashKeyGenBtnLoading: "Генерация...",
     dashKeyGenSuccess: "Ваш API-ключ успешно создан!",
@@ -266,7 +266,7 @@ const TRANSLATIONS = {
     pricingFreeBullet4: "Production LLM prompt synthesis support",
     pricingFreeBtn: "Generate Free Sandbox Key",
     pricingProTitle: "PRODUCTION PRO",
-    pricingProPrice: "$9",
+    pricingProPrice: "$5",
     pricingProPeriod: "/ month",
     pricingProDesc: "For high-performance AI applications, smart travel agents, CRM translation channels, and support bots.",
     pricingProBullet1: "Full access to both API endpoints",
@@ -304,7 +304,7 @@ const TRANSLATIONS = {
     dashKeyNamePlaceholder: "e.g., Production Travel Assistant, Mobile Support Bot",
     dashKeyTierLabel: "Select Subscription Tier Plan:",
     dashKeyTierFree: "Sandbox Free (50 requests/day)",
-    dashKeyTierPaid: "Production Pro ($9/mo - 1000 requests/day)",
+    dashKeyTierPaid: "Production Pro ($5/mo - 1000 requests/day)",
     dashKeyGenBtn: "Generate Token",
     dashKeyGenBtnLoading: "Generating...",
     dashKeyGenSuccess: "Your API Key has been successfully generated!",
@@ -1673,7 +1673,7 @@ export default function App() {
                               : 'bg-slate-950 text-slate-500 border-slate-850 hover:text-slate-300'
                           }`}
                         >
-                          Production Pro ($9)
+                          Production Pro ($5)
                         </button>
                       </div>
                     </div>
