@@ -226,7 +226,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
           id="btn-tab-analyze"
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-sans text-sm font-medium rounded-xl transition-all duration-300 ${
             activeTab === 'analyze' 
-              ? 'bg-slate-800 text-violet-400 shadow' 
+              ? 'bg-slate-800 text-lime-400 shadow' 
               : 'text-slate-400 hover:text-slate-200'
           }`}
           onClick={() => setActiveTab('analyze')}
@@ -238,7 +238,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
           id="btn-tab-enhance"
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 font-sans text-sm font-medium rounded-xl transition-all duration-300 ${
             activeTab === 'enhance' 
-              ? 'bg-slate-800 text-violet-400 shadow' 
+              ? 'bg-slate-800 text-lime-400 shadow' 
               : 'text-slate-400 hover:text-slate-200'
           }`}
           onClick={() => setActiveTab('enhance')}
@@ -263,7 +263,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                 onClick={() => selectExample(ex)}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="font-mono text-[9px] font-bold text-violet-400 bg-violet-400/10 px-1.5 py-0.5 rounded border border-violet-500/10 uppercase">
+                  <span className="font-mono text-[9px] font-bold text-lime-400 bg-lime-400/10 px-1.5 py-0.5 rounded border border-lime-500/10 uppercase">
                     {ex.lang}
                   </span>
                   <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 text-slate-400 transform translate-x-0 group-hover:translate-x-0.5 transition-all duration-200" />
@@ -272,7 +272,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                   "{ex.text}"
                 </div>
                 <div className="text-slate-400 truncate mb-1">Literal: {ex.literal}</div>
-                <div className="text-violet-300 font-medium truncate text-[11px]">{ex.meaning}</div>
+                <div className="text-lime-300 font-medium truncate text-[11px]">{ex.meaning}</div>
               </button>
             ))}
           </div>
@@ -300,7 +300,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                     onChange={(e) => setAnalyzeTextVal(e.target.value)}
                     rows={3}
                     placeholder={t[lang].inputTextPlaceholder}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200 text-sm resize-none font-sans"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200 text-sm resize-none font-sans"
                   />
                   <div className="absolute right-3 bottom-3 flex items-center gap-2">
                     <select
@@ -319,7 +319,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                       id="btn-trigger-analyze"
                       disabled={analyzeLoading || !analyzeTextVal.trim()}
                       onClick={() => handleAnalyze()}
-                      className="flex items-center gap-1.5 px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs rounded-lg transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-lime-600 hover:bg-lime-700 text-white font-bold text-xs rounded-lg transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {analyzeLoading ? (
                         <RefreshCw size={13} className="animate-spin" />
@@ -345,7 +345,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
               {/* Analyze Result Rendering */}
               {analyzeLoading && (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
-                  <RefreshCw className="animate-spin text-violet-400" size={32} />
+                  <RefreshCw className="animate-spin text-lime-400" size={32} />
                   <p className="text-sm font-medium animate-pulse font-sans">
                     {t[lang].loadingScanner}
                   </p>
@@ -365,15 +365,15 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                           className="text-slate-500 hover:text-slate-300 p-1 rounded transition-colors duration-200 cursor-pointer"
                           title="Copy literal translation"
                         >
-                          {copiedLiteral ? <Check size={12} className="text-violet-400" /> : <Copy size={12} />}
+                          {copiedLiteral ? <Check size={12} className="text-lime-400" /> : <Copy size={12} />}
                         </button>
                       </div>
                       <p className="text-lg text-slate-300 font-medium italic">
                         "{analyzeResult.literal_translation}"
                       </p>
                     </div>
-                    <div className="shrink-0 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-lg text-center">
-                      <span className="block text-2xl font-bold font-mono text-violet-400 leading-none">
+                    <div className="shrink-0 px-3 py-1.5 bg-lime-500/10 border border-lime-500/20 rounded-lg text-center">
+                      <span className="block text-2xl font-bold font-mono text-lime-400 leading-none">
                         {analyzeResult.items.length}
                       </span>
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -422,7 +422,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                     value={enhancePromptVal}
                     onChange={(e) => setEnhancePromptVal(e.target.value)}
                     placeholder={t[lang].inputPromptPlaceholder}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl px-4 py-2.5 text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200 text-sm font-sans"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl px-4 py-2.5 text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200 text-sm font-sans"
                   />
                 </div>
                 <div>
@@ -436,7 +436,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                       value={enhanceApiKey}
                       onChange={(e) => setEnhanceApiKey(e.target.value)}
                       placeholder="ltk_..."
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl pl-4 pr-24 py-2.5 text-slate-300 font-mono text-xs focus:outline-none transition-colors duration-200"
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl pl-4 pr-24 py-2.5 text-slate-300 font-mono text-xs focus:outline-none transition-colors duration-200"
                     />
                     <div className="absolute right-1.5 top-1.5 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-[9px] font-bold text-slate-400 uppercase tracking-wider">
                       {t[lang].inputKeySandbox}
@@ -456,14 +456,14 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                     onChange={(e) => setEnhanceTextVal(e.target.value)}
                     rows={3}
                     placeholder={t[lang].inputEnhanceTextPlaceholder}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200 text-sm resize-none font-sans"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200 text-sm resize-none font-sans"
                   />
                   <div className="absolute right-3 bottom-3">
                     <button
                       id="btn-trigger-enhance"
                       disabled={enhanceLoading || !enhancePromptVal.trim() || !enhanceTextVal.trim()}
                       onClick={handleEnhance}
-                      className="flex items-center gap-1.5 px-4 py-1.5 bg-violet-500 hover:bg-violet-600 text-slate-950 font-bold text-xs rounded-lg transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-lime-500 hover:bg-lime-600 text-slate-950 font-bold text-xs rounded-lg transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {enhanceLoading ? (
                         <RefreshCw size={13} className="animate-spin" />
@@ -489,7 +489,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
               {/* Enhance Result Loading */}
               {enhanceLoading && (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
-                  <RefreshCw className="animate-spin text-violet-400" size={32} />
+                  <RefreshCw className="animate-spin text-lime-400" size={32} />
                   <p className="text-sm font-medium animate-pulse font-sans">
                     {t[lang].loadingEnricher}
                   </p>
@@ -499,22 +499,22 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
               {/* Enhance Result Output */}
               {enhanceResult && (
                 <div className="flex flex-col gap-4 mt-2">
-                  <div className="bg-violet-500/10 border border-violet-500/20 p-4 rounded-xl flex items-center justify-between gap-3">
+                  <div className="bg-lime-500/10 border border-lime-500/20 p-4 rounded-xl flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-2 bg-violet-400/20 rounded-lg text-violet-400">
+                      <div className="p-2 bg-lime-400/20 rounded-lg text-lime-400">
                         <Check size={18} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-violet-300 font-sans">{t[lang].successTitle}</h4>
+                        <h4 className="text-sm font-bold text-lime-300 font-sans">{t[lang].successTitle}</h4>
                         <p className="text-xs text-slate-400 leading-none mt-0.5">
-                          {t[lang].successSubtitle} <span className="font-bold text-violet-400">{enhanceResult.losses_detected}</span>
+                          {t[lang].successSubtitle} <span className="font-bold text-lime-400">{enhanceResult.losses_detected}</span>
                         </p>
                       </div>
                     </div>
                     <button
                       id="btn-copy-enhanced"
                       onClick={handleCopyEnhanced}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 hover:bg-violet-600 text-slate-950 text-xs font-bold rounded-lg transition-colors duration-200 cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-lime-500 hover:bg-lime-600 text-slate-950 text-xs font-bold rounded-lg transition-colors duration-200 cursor-pointer"
                     >
                       {copiedEnhanced ? (
                         <>
@@ -539,7 +539,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                             className="text-slate-500 hover:text-slate-300 p-1 rounded transition-colors duration-200 cursor-pointer"
                             title="Copy raw prompt"
                           >
-                            {copiedRaw ? <Check size={12} className="text-violet-400" /> : <Copy size={12} />}
+                            {copiedRaw ? <Check size={12} className="text-lime-400" /> : <Copy size={12} />}
                           </button>
                           <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full font-mono scale-90">RAW</span>
                         </div>
@@ -552,18 +552,18 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                     </div>
 
                     {/* After Block */}
-                    <div className="bg-slate-950 rounded-xl border border-violet-500/20 overflow-hidden flex flex-col shadow-lg shadow-violet-950/10">
-                      <div className="bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-400 uppercase tracking-wider border-b border-violet-500/10 flex justify-between items-center">
+                    <div className="bg-slate-950 rounded-xl border border-lime-500/20 overflow-hidden flex flex-col shadow-lg shadow-lime-950/10">
+                      <div className="bg-lime-500/10 px-4 py-2 text-xs font-semibold text-lime-400 uppercase tracking-wider border-b border-lime-500/10 flex justify-between items-center">
                         <span className="flex items-center gap-1.5 font-sans"><Sparkles size={12} /> {t[lang].afterEnrichment}</span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={handleCopyEnhanced}
-                            className="text-violet-400 hover:text-violet-200 p-1 rounded transition-colors duration-200 cursor-pointer"
+                            className="text-lime-400 hover:text-lime-200 p-1 rounded transition-colors duration-200 cursor-pointer"
                             title="Copy enriched prompt"
                           >
-                            {copiedEnhanced ? <Check size={12} className="text-violet-400" /> : <Copy size={12} />}
+                            {copiedEnhanced ? <Check size={12} className="text-lime-400" /> : <Copy size={12} />}
                           </button>
-                          <span className="px-2 py-0.5 bg-violet-500/20 text-violet-300 rounded-full font-mono scale-90">ENRICHED</span>
+                          <span className="px-2 py-0.5 bg-lime-500/20 text-lime-300 rounded-full font-mono scale-90">ENRICHED</span>
                         </div>
                       </div>
                       <div className="p-4 flex-1 text-xs font-mono text-slate-300 leading-relaxed overflow-auto max-h-56">
@@ -573,7 +573,7 @@ export default function DemoWidget({ lang = 'ru' }: { lang?: 'ru' | 'en' }) {
                           return parts.map((part, index) => {
                             if (part.startsWith('[Cultural context')) {
                               return (
-                                <span key={index} className="bg-violet-500/10 border border-violet-500/20 text-violet-300 px-1 py-0.5 rounded inline-block my-1.5 font-sans leading-relaxed">
+                                <span key={index} className="bg-lime-500/10 border border-lime-500/20 text-lime-300 px-1 py-0.5 rounded inline-block my-1.5 font-sans leading-relaxed">
                                   {part}
                                 </span>
                               );

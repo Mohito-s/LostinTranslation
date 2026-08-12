@@ -79,7 +79,7 @@ print(enhanced_prompt)
             onClick={() => setSelectedLang('curl')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
               selectedLang === 'curl' 
-                ? 'bg-slate-800 text-violet-400' 
+                ? 'bg-slate-800 text-lime-400' 
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -91,7 +91,7 @@ print(enhanced_prompt)
             onClick={() => setSelectedLang('javascript')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
               selectedLang === 'javascript' 
-                ? 'bg-slate-800 text-violet-400' 
+                ? 'bg-slate-800 text-lime-400' 
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -103,7 +103,7 @@ print(enhanced_prompt)
             onClick={() => setSelectedLang('python')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
               selectedLang === 'python' 
-                ? 'bg-slate-800 text-violet-400' 
+                ? 'bg-slate-800 text-lime-400' 
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -119,7 +119,7 @@ print(enhanced_prompt)
           title="Copy snippet"
         >
           {copied ? (
-            <span className="flex items-center gap-1 text-[10px] text-violet-400 font-bold font-sans">
+            <span className="flex items-center gap-1 text-[10px] text-lime-400 font-bold font-sans">
               <Check size={12} /> Copied!
             </span>
           ) : (

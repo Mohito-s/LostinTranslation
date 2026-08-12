@@ -19,11 +19,11 @@ export default function LossCard({ item }: LossCardProps) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex gap-3">
-          <div className="mt-1 p-2 bg-violet-500/10 text-violet-400 rounded-lg shrink-0">
+          <div className="mt-1 p-2 bg-lime-500/10 text-lime-400 rounded-lg shrink-0">
             <AlertCircle size={18} />
           </div>
           <div>
-            <span className="inline-block font-mono text-sm px-2 py-0.5 bg-slate-900 text-violet-300 rounded border border-violet-500/20 font-bold mb-1.5">
+            <span className="inline-block font-mono text-sm px-2 py-0.5 bg-slate-900 text-lime-300 rounded border border-lime-500/20 font-bold mb-1.5">
               "{item.fragment}"
             </span>
             <p className="text-slate-200 font-medium leading-relaxed">
@@ -38,7 +38,7 @@ export default function LossCard({ item }: LossCardProps) {
         >
           <ChevronDown 
             size={18} 
-            className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180 text-violet-400' : ''}`} 
+            className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180 text-lime-400' : ''}`} 
           />
         </button>
       </div>
@@ -65,13 +65,13 @@ export default function LossCard({ item }: LossCardProps) {
                 </div>
               </div>
 
-              <div className="flex gap-2.5 items-start bg-violet-500/5 p-3 rounded-lg border border-violet-500/10">
-                <Sparkles size={16} className="text-violet-400 shrink-0 mt-0.5" />
+              <div className="flex gap-2.5 items-start bg-lime-500/5 p-3 rounded-lg border border-lime-500/10">
+                <Sparkles size={16} className="text-lime-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wider mb-1">
+                  <h4 className="text-xs font-semibold text-lime-400 uppercase tracking-wider mb-1">
                     Рекомендуемый эквивалент в контексте:
                   </h4>
-                  <p className="text-violet-300 font-medium leading-relaxed text-[13px]">
+                  <p className="text-lime-300 font-medium leading-relaxed text-[13px]">
                     {item.alternative}
                   </p>
                 </div>
