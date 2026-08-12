@@ -573,60 +573,30 @@ export default function App() {
       {/* 3D Ambient Vector Backdrops (No gradients, pure line depth) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         
-        {/* Deep Multi-Layered Orbital Astrolabe */}
-        <svg className="absolute top-[5%] left-[50%] -translate-x-1/2 w-[1200px] h-[800px] opacity-[0.25] text-slate-800" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Constellation star coordinates */}
-          <circle cx="200" cy="150" r="1.5" fill="#10b981" className="animate-pulse" />
-          <circle cx="350" cy="280" r="1" fill="#fff" />
-          <circle cx="450" cy="120" r="1" fill="#fff" />
-          <circle cx="680" cy="180" r="2" fill="#0d9488" className="animate-pulse" />
-          <circle cx="820" cy="290" r="1" fill="#fff" />
-          <circle cx="950" cy="140" r="1.5" fill="#14b8a6" />
-          <circle cx="1050" cy="350" r="1" fill="#fff" />
-          
-          {/* Interconnecting constellation vectors */}
-          <path d="M200 150 L350 280 L450 120" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3" />
-          <path d="M680 180 L820 290 L950 140 L1050 350" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3" />
-          <path d="M350 280 L680 180" stroke="currentColor" strokeWidth="0.5" strokeDasharray="6 6" />
-
-          {/* Depth Orbit rings (No gradients, just pure thin mathematical curves) */}
-          <ellipse cx="600" cy="350" rx="350" ry="120" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
-          <ellipse cx="600" cy="350" rx="250" ry="86" stroke="currentColor" strokeWidth="0.75" />
-          <ellipse cx="600" cy="350" rx="150" ry="51" stroke="currentColor" strokeWidth="1.5" strokeDasharray="1 10" />
-          <ellipse cx="600" cy="350" rx="550" ry="190" stroke="currentColor" strokeWidth="0.5" className="opacity-50" />
-          
-          {/* Crossed Keplerian Orbits for additional spatial depth */}
-          <g style={{ transform: 'rotate(-25deg)', transformOrigin: '600px 350px' }}>
-            <ellipse cx="600" cy="350" rx="420" ry="140" stroke="currentColor" strokeWidth="0.75" strokeDasharray="5 5" />
-            <circle cx="180" cy="350" r="3" fill="#10b981" />
-            <circle cx="1020" cy="350" r="2" fill="#0d9488" />
-          </g>
-          
-          <g style={{ transform: 'rotate(15deg)', transformOrigin: '600px 350px' }}>
-            <ellipse cx="600" cy="350" rx="480" ry="160" stroke="currentColor" strokeWidth="0.5" />
-            <circle cx="120" cy="350" r="2" fill="#fff" className="animate-pulse" />
-          </g>
-        </svg>
+        {/* Dev-tool backdrop: perforated grid + top glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(#24242b_1px,transparent_1px)] [background-size:28px_28px] opacity-40" />
+        <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[1100px] h-[520px] rounded-full bg-violet-500/10 blur-[130px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950" />
       </div>
       
       {/* HEADER / NAVBAR */}
       <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => { setCurrentTab('home'); setIsMobileMenuOpen(false); }}>
-            <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/15 flex items-center justify-center">
+            <div className="p-2 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-xl shadow-lg shadow-violet-500/15 flex items-center justify-center">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
                 <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" className="opacity-40" />
-                <path d="M16 8C16 8 14.5 10 12 10C9.5 10 8 8 8 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-300" />
-                <path d="M8 16C8 16 9.5 14 12 14C14.5 14 16 16 16 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-teal-300" />
+                <path d="M16 8C16 8 14.5 10 12 10C9.5 10 8 8 8 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-violet-300" />
+                <path d="M8 16C8 16 9.5 14 12 14C14.5 14 16 16 16 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-300" />
                 <path d="M12 2V22" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" className="opacity-30" />
-                <circle cx="12" cy="12" r="3" fill="currentColor" className="animate-pulse text-emerald-400" />
+                <circle cx="12" cy="12" r="3" fill="currentColor" className="animate-pulse text-violet-400" />
               </svg>
             </div>
             <div>
               <span className="font-display text-lg font-bold tracking-tight text-white">
                 LostInTranslation
               </span>
-              <span className="ml-1.5 px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wider font-mono border border-emerald-500/10">
+              <span className="ml-1.5 px-1.5 py-0.5 bg-violet-500/15 text-violet-400 text-[10px] font-bold rounded uppercase tracking-wider font-mono border border-violet-500/10">
                 API v1.0
               </span>
             </div>
@@ -674,7 +644,7 @@ export default function App() {
                 onClick={() => setLang('ru')}
                 className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                   lang === 'ru' 
-                    ? 'bg-emerald-600 text-white shadow' 
+                    ? 'bg-violet-600 text-white shadow' 
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
@@ -684,7 +654,7 @@ export default function App() {
                 onClick={() => setLang('en')}
                 className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                   lang === 'en' 
-                    ? 'bg-emerald-600 text-white shadow' 
+                    ? 'bg-violet-600 text-white shadow' 
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
@@ -696,7 +666,7 @@ export default function App() {
             {user && (
               <div className="flex items-center gap-2 ml-1 mr-1">
                 <span className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5">
-                  <User size={10} className="text-emerald-400" />
+                  <User size={10} className="text-violet-400" />
                   {user.email}
                 </span>
                 <button
@@ -711,7 +681,7 @@ export default function App() {
 
             <button
               id="nav-tab-dashboard"
-              className={`ml-1 px-3.5 py-2 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer`}
+              className={`ml-1 px-3.5 py-2 text-sm font-semibold rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer`}
               onClick={() => setCurrentTab('dashboard')}
             >
               <Key size={14} />
@@ -725,7 +695,7 @@ export default function App() {
               <button
                 onClick={() => setLang('ru')}
                 className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
-                  lang === 'ru' ? 'bg-emerald-600 text-white' : 'text-slate-500'
+                  lang === 'ru' ? 'bg-violet-600 text-white' : 'text-slate-500'
                 }`}
               >
                 RU
@@ -733,7 +703,7 @@ export default function App() {
               <button
                 onClick={() => setLang('en')}
                 className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
-                  lang === 'en' ? 'bg-emerald-600 text-white' : 'text-slate-500'
+                  lang === 'en' ? 'bg-violet-600 text-white' : 'text-slate-500'
                 }`}
               >
                 EN
@@ -765,7 +735,7 @@ export default function App() {
                   id="nav-mob-home"
                   className={`w-full text-left px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
                     currentTab === 'home' 
-                      ? 'bg-slate-900 text-emerald-400' 
+                      ? 'bg-slate-900 text-violet-400' 
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                   onClick={() => {
@@ -779,7 +749,7 @@ export default function App() {
                   id="nav-mob-demo"
                   className={`w-full text-left px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
                     currentTab === 'demo' 
-                      ? 'bg-slate-900 text-emerald-400' 
+                      ? 'bg-slate-900 text-violet-400' 
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                   onClick={() => {
@@ -793,7 +763,7 @@ export default function App() {
                   id="nav-mob-docs"
                   className={`w-full text-left px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
                     currentTab === 'docs' 
-                      ? 'bg-slate-900 text-emerald-400' 
+                      ? 'bg-slate-900 text-violet-400' 
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                   onClick={() => {
@@ -806,7 +776,7 @@ export default function App() {
 
                 <button
                   id="nav-mob-dashboard"
-                  className={`w-full text-center px-4 py-3.5 text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md flex items-center justify-center gap-2 mt-2`}
+                  className={`w-full text-center px-4 py-3.5 text-sm font-bold rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-all shadow-md flex items-center justify-center gap-2 mt-2`}
                   onClick={() => {
                     setCurrentTab('dashboard');
                     setIsMobileMenuOpen(false);
@@ -837,22 +807,18 @@ export default function App() {
             >
               {/* HERO SECTION WITH GEOMETRIC GRID */}
               <div className="text-center max-w-3xl mx-auto flex flex-col gap-6 mt-6 relative p-8 rounded-3xl overflow-hidden border border-slate-900/60 bg-slate-950/40 backdrop-blur-sm">
-                {/* Clean vector geometry instead of dot grid */}
-                <div className="absolute inset-0 opacity-15 pointer-events-none flex items-center justify-center">
-                  <svg width="100%" height="100%" viewBox="0 0 800 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-700">
-                    <circle cx="400" cy="200" r="180" stroke="currentColor" strokeWidth="1" strokeDasharray="3 6" />
-                    <circle cx="400" cy="200" r="120" stroke="currentColor" strokeWidth="1" />
-                    <circle cx="400" cy="200" r="60" stroke="currentColor" strokeWidth="0.75" strokeDasharray="2 2" />
-                    <line x1="400" y1="0" x2="400" y2="400" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
-                    <line x1="100" y1="200" x2="700" y2="200" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
-                    <ellipse cx="400" cy="200" rx="180" ry="60" stroke="currentColor" strokeWidth="0.75" />
-                    <ellipse cx="400" cy="200" rx="60" ry="180" stroke="currentColor" strokeWidth="0.75" />
-                  </svg>
-                </div>
+                {/* Perforated grid backdrop */}
+                <div className="absolute inset-0 opacity-25 pointer-events-none bg-[radial-gradient(#24242b_1px,transparent_1px)] [background-size:22px_22px]" />
+                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[520px] h-[260px] rounded-full bg-violet-500/10 blur-[100px] pointer-events-none" />
+
+                <span className="relative inline-flex items-center gap-2 text-[11px] font-mono text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-3 py-1.5 w-fit mx-auto">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                  lit://cultural-loss-detection
+                </span>
 
                 <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-white leading-[1.15]">
                   {TRANSLATIONS[lang].heroTitle}<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400">
                     {TRANSLATIONS[lang].heroTitleHighlight}
                   </span>
                 </h1>
@@ -865,7 +831,7 @@ export default function App() {
                   <button
                     id="btn-hero-demo"
                     onClick={() => setCurrentTab('demo')}
-                    className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-lg shadow-violet-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {TRANSLATIONS[lang].heroBtnSandbox}
                     <ArrowRight size={16} />
@@ -878,10 +844,28 @@ export default function App() {
                     {TRANSLATIONS[lang].heroBtnDocs}
                   </button>
                 </div>
+
+                {/* Terminal snippet */}
+                <div className="relative w-full max-w-2xl mx-auto mt-2 bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden text-left">
+                  <div className="flex items-center gap-1.5 px-3 py-2 border-b border-slate-800 bg-slate-900/70">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                    <span className="ml-2 text-[10px] font-mono text-slate-500">lit-cli — lost-in-translation</span>
+                  </div>
+                  <div className="p-4 font-mono text-[11px] leading-relaxed text-slate-300">
+                    <div><span className="text-violet-400">$</span> curl -s https://api.lostintranslation.dev/api/compare \</div>
+                    <div>&nbsp;&nbsp;-H <span className="text-slate-400">'x-api-key: ltk_...'</span> \</div>
+                    <div>&nbsp;&nbsp;-d <span className="text-slate-400">'&#123;"source": "行けたら行く", "target": "I will go if I can"&#125;'</span></div>
+                    <div className="mt-2 text-slate-500"># response</div>
+                    <div><span className="text-violet-300">{'"score": 65'}</span>, <span className="text-slate-400">{'"verdict": "Significant meaning loss"'}</span></div>
+                    <div className="text-slate-500"># try it live on the <span className="text-slate-300">Demo</span> tab ↑</div>
+                  </div>
+                </div>
               </div>
 
               {/* HOW IT WORKS DIAGRAM */}
-              <div className="bg-slate-900/40 rounded-3xl border border-slate-900 p-8 shadow-inner bg-[radial-gradient(#111827_1px,transparent_1px)] [background-size:20px_20px]">
+              <div className="bg-slate-900/40 rounded-3xl border border-slate-900 p-8 shadow-inner bg-[radial-gradient(#24242b_1px,transparent_1px)] [background-size:20px_20px]">
                 <div className="max-w-4xl mx-auto">
                   <h3 className="text-center font-display text-xl font-bold mb-8">
                     {TRANSLATIONS[lang].howTitle}
@@ -891,7 +875,7 @@ export default function App() {
                     
                     {/* Step 1 */}
                     <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-850 flex flex-col gap-3 relative">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold flex items-center justify-center font-mono border border-emerald-500/15">
+                      <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 font-bold flex items-center justify-center font-mono border border-violet-500/15">
                         1
                       </div>
                       <h4 className="font-bold text-white font-sans text-sm">{TRANSLATIONS[lang].howStep1Title}</h4>
@@ -904,32 +888,32 @@ export default function App() {
                     </div>
 
                     {/* Step 2 */}
-                    <div className="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/20 shadow-lg shadow-emerald-500/5 flex flex-col gap-3 relative">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white font-bold flex items-center justify-center font-mono">
+                    <div className="bg-slate-950/80 p-5 rounded-2xl border border-violet-500/20 shadow-lg shadow-violet-500/5 flex flex-col gap-3 relative">
+                      <div className="w-8 h-8 rounded-lg bg-violet-500 text-white font-bold flex items-center justify-center font-mono">
                         2
                       </div>
-                      <h4 className="font-bold text-emerald-400 font-sans text-sm flex items-center gap-1">
+                      <h4 className="font-bold text-violet-400 font-sans text-sm flex items-center gap-1">
                         {TRANSLATIONS[lang].howStep2Title}
                         <Sparkles size={12} />
                       </h4>
                       <p className="text-xs text-slate-300 leading-relaxed font-sans">
                         {TRANSLATIONS[lang].howStep2Desc}
                       </p>
-                      <div className="mt-2 bg-emerald-500/5 p-2.5 rounded font-mono text-[10px] text-emerald-300/90 border border-emerald-500/10">
+                      <div className="mt-2 bg-violet-500/5 p-2.5 rounded font-mono text-[10px] text-violet-300/90 border border-violet-500/10">
                         <span>[Context: Politeness nuance - usually means they won't attend...]</span>
                       </div>
                     </div>
 
                     {/* Step 3 */}
                     <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-850 flex flex-col gap-3 relative">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold flex items-center justify-center font-mono border border-emerald-500/15">
+                      <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 font-bold flex items-center justify-center font-mono border border-violet-500/15">
                         3
                       </div>
                       <h4 className="font-bold text-white font-sans text-sm">{TRANSLATIONS[lang].howStep3Title}</h4>
                       <p className="text-xs text-slate-400 leading-relaxed font-sans">
                         {TRANSLATIONS[lang].howStep3Desc}
                       </p>
-                      <div className="mt-2 bg-emerald-500/5 p-2.5 rounded font-mono text-[10px] text-emerald-400 border border-emerald-500/10">
+                      <div className="mt-2 bg-violet-500/5 p-2.5 rounded font-mono text-[10px] text-violet-400 border border-violet-500/10">
                         <span className="font-bold">Real Meaning: Declining politely (98% accuracy)</span>
                       </div>
                     </div>
@@ -944,7 +928,7 @@ export default function App() {
               {/* INTERACTIVE ARCHITECTURE GUIDE (DEVELOPER VS USER FLOW) */}
               <div className="bg-slate-900/40 border border-slate-850 p-6 md:p-8 rounded-3xl mt-4">
                 <div className="max-w-2xl mx-auto text-center mb-8">
-                  <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/10 uppercase tracking-wider font-semibold">
+                  <span className="text-xs font-mono text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/10 uppercase tracking-wider font-semibold">
                     {lang === 'ru' ? 'Архитектура Интеграции' : 'Integration Architecture'}
                   </span>
                   <h3 className="text-xl md:text-2xl font-display font-bold text-white mt-3">
@@ -960,10 +944,10 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                   {/* Left Column: Developer */}
                   <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col gap-4 relative">
-                    <div className="absolute top-4 right-4 text-xs font-mono text-emerald-400/70 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">
+                    <div className="absolute top-4 right-4 text-xs font-mono text-violet-400/70 bg-violet-500/5 px-2 py-0.5 rounded border border-violet-500/10">
                       {lang === 'ru' ? 'Слой Разработки' : 'Developer Interface'}
                     </div>
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Terminal size={18} />
                     </div>
                     <div>
@@ -975,16 +959,16 @@ export default function App() {
                       </p>
                     </div>
                     <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800/60 text-[11px] font-mono text-slate-400/80">
-                      <span className="text-emerald-400">headers:</span> <span className="text-slate-300">{"{"} "Authorization": "Bearer ltk_..." {"}"}</span>
+                      <span className="text-violet-400">headers:</span> <span className="text-slate-300">{"{"} "Authorization": "Bearer ltk_..." {"}"}</span>
                     </div>
                   </div>
 
                   {/* Right Column: End User */}
                   <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col gap-4 relative">
-                    <div className="absolute top-4 right-4 text-xs font-mono text-teal-400/70 bg-teal-500/5 px-2 py-0.5 rounded border border-teal-500/10">
+                    <div className="absolute top-4 right-4 text-xs font-mono text-indigo-400/70 bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10">
                       {lang === 'ru' ? 'Конечный Клиент' : 'End Client Stream'}
                     </div>
-                    <div className="p-2.5 bg-teal-500/10 text-teal-400 rounded-xl w-fit">
+                    <div className="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl w-fit">
                       <Users size={18} />
                     </div>
                     <div>
@@ -997,7 +981,7 @@ export default function App() {
                     </div>
                     <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800/60 text-[11px] font-mono text-slate-400/80 flex items-center justify-between">
                       <span className="text-slate-400">{lang === 'ru' ? 'Пользователь ➔ Ваш Чат ➔ LIT API ➔ LLM' : 'Client ➔ Your Server ➔ LIT API ➔ LLM'}</span>
-                      <span className="text-emerald-400 font-semibold text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded">✓ {lang === 'ru' ? 'Скрыто от клиента' : 'Transparent to Client'}</span>
+                      <span className="text-violet-400 font-semibold text-[10px] bg-violet-500/10 px-2 py-0.5 rounded">✓ {lang === 'ru' ? 'Скрыто от клиента' : 'Transparent to Client'}</span>
                     </div>
                   </div>
                 </div>
@@ -1023,8 +1007,8 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   
                   {/* 1. Modal Particles */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-emerald-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-violet-500/30 transition-all duration-300">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Layers size={18} />
                     </div>
                     <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix1Title}</h3>
@@ -1034,8 +1018,8 @@ export default function App() {
                   </div>
 
                   {/* 2. Diminutives */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-emerald-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-violet-500/30 transition-all duration-300">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Sparkles size={18} />
                     </div>
                     <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix2Title}</h3>
@@ -1045,8 +1029,8 @@ export default function App() {
                   </div>
 
                   {/* 3. Understatement as Default */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-emerald-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-violet-500/30 transition-all duration-300">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Activity size={18} />
                     </div>
                     <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix3Title}</h3>
@@ -1056,8 +1040,8 @@ export default function App() {
                   </div>
 
                   {/* 4. Hedging */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-emerald-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-violet-500/30 transition-all duration-300">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Shield size={18} />
                     </div>
                     <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix4Title}</h3>
@@ -1067,8 +1051,8 @@ export default function App() {
                   </div>
 
                   {/* 5. Verb Aspect */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-emerald-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-violet-500/30 transition-all duration-300">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Database size={18} />
                     </div>
                     <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix5Title}</h3>
@@ -1078,8 +1062,8 @@ export default function App() {
                   </div>
 
                   {/* 6. Prosody & Word Order */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-emerald-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
+                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-violet-500/30 transition-all duration-300">
+                    <div className="p-2.5 bg-violet-500/10 text-violet-400 rounded-xl w-fit">
                       <Terminal size={18} />
                     </div>
                     <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix6Title}</h3>
@@ -1120,11 +1104,11 @@ export default function App() {
                       
                       <ul className="mt-6 flex flex-col gap-3 text-xs text-slate-300">
                         <li className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-violet-400 shrink-0" />
                           <span>{TRANSLATIONS[lang].pricingFreeBullet1}</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-violet-400 shrink-0" />
                           <span>{TRANSLATIONS[lang].pricingFreeBullet2}</span>
                         </li>
                         <li className="flex items-center gap-2 text-slate-500 line-through">
@@ -1151,12 +1135,12 @@ export default function App() {
                   </div>
 
                   {/* Plan 2: Pro */}
-                  <div className="bg-slate-900 border-2 border-emerald-500/20 rounded-3xl p-6 flex flex-col justify-between relative shadow-lg shadow-emerald-500/5">
-                    <div className="absolute -top-3.5 right-6 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full font-mono uppercase tracking-wider">
+                  <div className="bg-slate-900 border-2 border-violet-500/20 rounded-3xl p-6 flex flex-col justify-between relative shadow-lg shadow-violet-500/5">
+                    <div className="absolute -top-3.5 right-6 px-3 py-1 bg-violet-600 text-white text-[10px] font-bold rounded-full font-mono uppercase tracking-wider">
                       Most Popular
                     </div>
                     <div>
-                      <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/10 font-mono">
+                      <span className="text-xs font-semibold text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-500/10 font-mono">
                         {TRANSLATIONS[lang].pricingProTitle}
                       </span>
                       <div className="flex items-baseline gap-1 mt-4">
@@ -1169,19 +1153,19 @@ export default function App() {
                       
                       <ul className="mt-6 flex flex-col gap-3 text-xs text-slate-300">
                         <li className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-violet-400 shrink-0" />
                           <span className="font-bold text-white">{TRANSLATIONS[lang].pricingProBullet1}</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-violet-400 shrink-0" />
                           <span>{TRANSLATIONS[lang].pricingProBullet2}</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-violet-400 shrink-0" />
                           <span>{TRANSLATIONS[lang].pricingProBullet3}</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-violet-400 shrink-0" />
                           <span>{TRANSLATIONS[lang].pricingProBullet4}</span>
                         </li>
                       </ul>
@@ -1193,7 +1177,7 @@ export default function App() {
                         setCurrentTab('dashboard');
                         setNewKeyTier('paid');
                       }}
-                      className="mt-8 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
+                      className="mt-8 w-full py-2.5 px-4 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl text-xs transition-all duration-200 shadow-md shadow-violet-500/10 cursor-pointer"
                     >
                       {TRANSLATIONS[lang].pricingProBtn}
                     </button>
@@ -1217,7 +1201,7 @@ export default function App() {
             >
               <div className="flex flex-col gap-2">
                 <h2 className="text-2xl font-display font-bold text-white flex items-center gap-2">
-                  <Play size={18} className="text-emerald-400" />
+                  <Play size={18} className="text-violet-400" />
                   {TRANSLATIONS[lang].demoTitle}
                 </h2>
                 <p className="text-sm text-slate-400 leading-relaxed font-sans max-w-2xl">
@@ -1243,13 +1227,13 @@ export default function App() {
               <div className="lg:col-span-1 flex flex-col gap-6">
                 <div className="bg-slate-900 border border-slate-850 p-5 rounded-2xl sticky top-24">
                   <h3 className="font-display font-bold text-slate-200 mb-4 flex items-center gap-2">
-                    <BookOpen size={16} className="text-emerald-400" />
+                    <BookOpen size={16} className="text-violet-400" />
                     {lang === 'ru' ? "Содержание" : "Table of Contents"}
                   </h3>
                   
                   <ul className="flex flex-col gap-2 text-xs">
                     <li>
-                      <a href="#doc-overview" className="block py-2 px-3 bg-slate-950 rounded-lg text-emerald-400 font-medium">
+                      <a href="#doc-overview" className="block py-2 px-3 bg-slate-950 rounded-lg text-violet-400 font-medium">
                         {lang === 'ru' ? "1. Обзор архитектуры" : "1. Architecture Overview"}
                       </a>
                     </li>
@@ -1295,7 +1279,7 @@ export default function App() {
                 {/* 2. Endpoint: analyze */}
                 <section id="doc-endpoint-analyze" className="flex flex-col gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold rounded">
+                    <span className="px-2.5 py-1 bg-violet-500/10 text-violet-400 text-xs font-mono font-bold rounded">
                       POST
                     </span>
                     <h2 className="text-xl font-display font-bold text-white">
@@ -1322,7 +1306,7 @@ export default function App() {
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                       {lang === 'ru' ? "Тело запроса (Request JSON)" : "Request Body (JSON)"}
                     </span>
-                    <pre className="text-xs font-mono text-emerald-300 bg-slate-950 p-2 rounded">
+                    <pre className="text-xs font-mono text-violet-300 bg-slate-950 p-2 rounded">
 {`{
   "text": "行けたら行く",
   "target_language": "en"
@@ -1357,7 +1341,7 @@ export default function App() {
                 {/* 3. Endpoint: enhance */}
                 <section id="doc-endpoint-enhance" className="flex flex-col gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold rounded">
+                    <span className="px-2.5 py-1 bg-violet-500/10 text-violet-400 text-xs font-mono font-bold rounded">
                       POST
                     </span>
                     <h2 className="text-xl font-display font-bold text-white">
@@ -1374,7 +1358,7 @@ export default function App() {
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                       {lang === 'ru' ? "Тело запроса (Request JSON)" : "Request Body (JSON)"}
                     </span>
-                    <pre className="text-xs font-mono text-emerald-300 bg-slate-950 p-2 rounded">
+                    <pre className="text-xs font-mono text-violet-300 bg-slate-950 p-2 rounded">
 {`{
   "prompt": "Summarize the following user feedback",
   "text": "Ну в принципе неплохо, но могло бы быть и лучше"
@@ -1450,10 +1434,10 @@ export default function App() {
               {!user ? (
                 <div className="max-w-md mx-auto w-full my-8 bg-slate-900 border border-slate-800/80 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
                   {/* Decorative background glow */}
-                  <div className="absolute top-0 left-1/4 w-1/2 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full filter blur-[1px]"></div>
+                  <div className="absolute top-0 left-1/4 w-1/2 h-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full filter blur-[1px]"></div>
                   
                   <div className="text-center mb-6">
-                    <div className="inline-flex p-3 bg-emerald-500/10 text-emerald-400 rounded-xl mb-3 border border-emerald-500/20">
+                    <div className="inline-flex p-3 bg-violet-500/10 text-violet-400 rounded-xl mb-3 border border-violet-500/20">
                       <Users size={22} className="animate-pulse" />
                     </div>
                     <h3 className="text-xl font-display font-bold text-white">
@@ -1511,7 +1495,7 @@ export default function App() {
                         value={authEmail}
                         onChange={(e) => setAuthEmail(e.target.value)}
                         placeholder="developer@example.com"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors duration-200 font-mono"
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors duration-200 font-mono"
                       />
                     </div>
 
@@ -1526,7 +1510,7 @@ export default function App() {
                         value={authPassword}
                         onChange={(e) => setAuthPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors duration-200 font-mono"
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors duration-200 font-mono"
                       />
                     </div>
 
@@ -1534,7 +1518,7 @@ export default function App() {
                       id="auth-submit-btn"
                       type="submit"
                       disabled={authLoading}
-                      className="w-full mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full mt-2 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {authLoading ? (
                         <RefreshCw size={13} className="animate-spin" />
@@ -1553,7 +1537,7 @@ export default function App() {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-5">
                 <div>
                   <h2 className="text-2xl font-display font-bold text-white flex items-center gap-2">
-                    <Database size={22} className="text-emerald-400" />
+                    <Database size={22} className="text-violet-400" />
                     Панель разработчика & Ключи
                   </h2>
                   <p className="text-sm text-slate-400 leading-none mt-1">
@@ -1585,7 +1569,7 @@ export default function App() {
                       {stats.totalRequests}
                     </div>
                     <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
-                      <Activity size={12} className="text-emerald-400" />
+                      <Activity size={12} className="text-violet-400" />
                       {TRANSLATIONS[lang].dashStatsSyncRealtime}
                     </div>
                   </div>
@@ -1595,7 +1579,7 @@ export default function App() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                       {TRANSLATIONS[lang].dashStatsLossesPrevented}
                     </span>
-                    <div className="text-3xl font-bold text-emerald-400 font-display">
+                    <div className="text-3xl font-bold text-violet-400 font-display">
                       {Math.round(stats.totalRequests * stats.lossesAvg)}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
@@ -1610,7 +1594,7 @@ export default function App() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                       {TRANSLATIONS[lang].dashStatsSuccessRate}
                     </span>
-                    <div className="text-3xl font-bold text-emerald-400 font-display">
+                    <div className="text-3xl font-bold text-violet-400 font-display">
                       {stats.successRate}%
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
@@ -1642,7 +1626,7 @@ export default function App() {
                 {/* 1. Generate API Key form */}
                 <div className="lg:col-span-1 bg-slate-900 border border-slate-880 p-6 rounded-2xl h-fit flex flex-col gap-4">
                   <h3 className="font-display font-bold text-slate-200 text-base flex items-center gap-1.5">
-                    <Plus size={18} className="text-emerald-400" />
+                    <Plus size={18} className="text-violet-400" />
                     {lang === 'ru' ? "Выпустить новый API-ключ" : "Issue New API Key"}
                   </h3>
 
@@ -1658,7 +1642,7 @@ export default function App() {
                         value={newKeyName}
                         onChange={(e) => setNewKeyName(e.target.value)}
                         placeholder={lang === 'ru' ? "Например: Production Telegram Bot" : "E.g. Production Telegram Bot"}
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/60 rounded-xl px-4 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200"
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500/60 rounded-xl px-4 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200"
                       />
                     </div>
 
@@ -1673,7 +1657,7 @@ export default function App() {
                           onClick={() => setNewKeyTier('free')}
                           className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
                             newKeyTier === 'free'
-                              ? 'bg-slate-800 text-emerald-400 border-emerald-500/20'
+                              ? 'bg-slate-800 text-violet-400 border-violet-500/20'
                               : 'bg-slate-950 text-slate-500 border-slate-850 hover:text-slate-300'
                           }`}
                         >
@@ -1685,7 +1669,7 @@ export default function App() {
                           onClick={() => setNewKeyTier('paid')}
                           className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
                             newKeyTier === 'paid'
-                              ? 'bg-slate-800 text-emerald-400 border-emerald-500/20 shadow-md shadow-emerald-500/20'
+                              ? 'bg-slate-800 text-violet-400 border-violet-500/20 shadow-md shadow-violet-500/20'
                               : 'bg-slate-950 text-slate-500 border-slate-850 hover:text-slate-300'
                           }`}
                         >
@@ -1698,7 +1682,7 @@ export default function App() {
                       id="btn-submit-key-generation"
                       type="submit"
                       disabled={keyGenerationLoading || !newKeyName.trim()}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-45 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-45 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {keyGenerationLoading ? (
                         <RefreshCw size={12} className="animate-spin" />
@@ -1716,9 +1700,9 @@ export default function App() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-emerald-500/10 border border-emerald-500/25 p-4 rounded-xl flex flex-col gap-2 mt-2"
+                        className="bg-violet-500/10 border border-violet-500/25 p-4 rounded-xl flex flex-col gap-2 mt-2"
                       >
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
+                        <div className="flex items-center gap-1.5 text-xs text-violet-400 font-bold">
                           <Check size={14} /> {lang === 'ru' ? "Токен успешно сгенерирован!" : "Token successfully generated!"}
                         </div>
                         <p className="text-[10px] text-slate-400 leading-tight font-sans">
@@ -1727,7 +1711,7 @@ export default function App() {
                             : "Copy it right now. For security reasons, you will not be able to view it again after reloading."}
                         </p>
                         <div className="flex items-center bg-slate-950 rounded-lg p-2 border border-slate-800 justify-between gap-2 mt-1">
-                          <span className="font-mono text-xs text-emerald-300 font-bold break-all select-all">
+                          <span className="font-mono text-xs text-violet-300 font-bold break-all select-all">
                             {generatedKeyResult}
                           </span>
                           <button
@@ -1736,7 +1720,7 @@ export default function App() {
                             className="p-1 hover:bg-slate-900 rounded text-slate-400 hover:text-white shrink-0"
                           >
                             {copiedKeyId === 'new_key' ? (
-                              <Check size={14} className="text-emerald-400" />
+                              <Check size={14} className="text-violet-400" />
                             ) : (
                               <Copy size={14} />
                             )}
@@ -1757,7 +1741,7 @@ export default function App() {
                 {/* 2. List of active/revoked keys */}
                 <div className="lg:col-span-2 bg-slate-900 border border-slate-880 p-6 rounded-2xl flex flex-col gap-4">
                   <h3 className="font-display font-bold text-slate-200 text-base flex items-center gap-1.5">
-                    <Settings size={18} className="text-emerald-400" />
+                    <Settings size={18} className="text-violet-400" />
                     {lang === 'ru' ? "Список ваших API-ключей" : "Your API Access Tokens"}
                   </h3>
 
@@ -1792,7 +1776,7 @@ export default function App() {
                                     title={lang === 'ru' ? "Скопировать полный ключ" : "Copy full key"}
                                   >
                                     {copiedKeyId === k.id ? (
-                                      <Check size={11} className="text-emerald-400" />
+                                      <Check size={11} className="text-violet-400" />
                                     ) : (
                                       <Copy size={11} />
                                     )}
@@ -1802,7 +1786,7 @@ export default function App() {
                               <td className="py-3.5 pr-2">
                                 <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider font-mono ${
                                   k.tier === 'paid' 
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' 
                                     : 'bg-slate-950 text-slate-400 border border-slate-850'
                                   }`}>
                                   {k.tier}
@@ -1845,7 +1829,7 @@ export default function App() {
               {stats && stats.recentLogs.length > 0 && (
                 <div className="bg-slate-900 border border-slate-880 p-6 rounded-2xl flex flex-col gap-4 shadow-lg">
                   <h3 className="font-display font-bold text-slate-200 text-base flex items-center gap-1.5">
-                    <Activity size={18} className="text-emerald-400 animate-pulse" />
+                    <Activity size={18} className="text-violet-400 animate-pulse" />
                     {lang === 'ru' ? "Логи транзакций API шлюза (Аудит в реальном времени)" : "Gateway Transaction Logs (Real-time Audit)"}
                   </h3>
 
@@ -1867,8 +1851,8 @@ export default function App() {
                             <td className="py-3">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono ${
                                 log.endpoint === 'enhance'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
-                                  : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/10'
+                                  ? 'bg-violet-500/10 text-violet-400 border border-violet-500/10'
+                                  : 'bg-sky-500/10 text-sky-400 border border-sky-500/10'
                               }`}>
                                 POST /api/{log.endpoint}
                               </span>
@@ -1883,7 +1867,7 @@ export default function App() {
                             <td className="py-3">
                               <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
                                 log.lossesDetected > 0
-                                  ? 'bg-emerald-500/10 text-emerald-300'
+                                  ? 'bg-violet-500/10 text-violet-300'
                                   : 'bg-slate-950 text-slate-500'
                               }`}>
                                 {log.lossesDetected} fixed

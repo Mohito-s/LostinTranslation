@@ -7,3 +7,4 @@ coverage/
 .env*
 !.env.example
 local_db.json
+.playwright-mcp/

@@ -115,7 +115,7 @@ export default function PromptSimulator({ lang = 'ru' }: { lang?: 'ru' | 'en' })
 
       <div className="flex flex-col gap-6">
         <div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/10 uppercase tracking-wider font-semibold">
+          <span className="text-xs font-mono text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/10 uppercase tracking-wider font-semibold">
             Interactive Simulator
           </span>
           <h3 className="text-xl md:text-2xl font-display font-bold text-white mt-3">
@@ -139,11 +139,11 @@ export default function PromptSimulator({ lang = 'ru' }: { lang?: 'ru' | 'en' })
                 onClick={() => setActiveCaseId(c.id)}
                 className={`flex-1 text-center py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-300 cursor-pointer ${
                   activeCaseId === c.id
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/10'
+                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/10'
                     : 'bg-slate-900/60 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span className="font-mono bg-slate-950/60 text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 rounded mr-1.5 border border-emerald-500/10">
+                <span className="font-mono bg-slate-950/60 text-violet-400 text-[10px] font-bold px-1.5 py-0.5 rounded mr-1.5 border border-violet-500/10">
                   {c.langCode}
                 </span>
                 {lang === 'ru' ? c.titleRu : c.titleEn}
@@ -198,24 +198,24 @@ export default function PromptSimulator({ lang = 'ru' }: { lang?: 'ru' | 'en' })
           </div>
 
           {/* Panel 2: ENRICHED / With LIT API */}
-          <div className="bg-slate-950/80 rounded-2xl border border-emerald-500/10 p-5 flex flex-col gap-4 relative shadow-lg shadow-emerald-950/5">
-            <div className="absolute top-0 right-8 -translate-y-1/2 px-2 py-0.5 bg-emerald-600 text-white text-[9px] font-bold rounded uppercase tracking-wider font-mono">
+          <div className="bg-slate-950/80 rounded-2xl border border-violet-500/10 p-5 flex flex-col gap-4 relative shadow-lg shadow-violet-950/5">
+            <div className="absolute top-0 right-8 -translate-y-1/2 px-2 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded uppercase tracking-wider font-mono">
               Enriched Layer
             </div>
             
             <div className="flex justify-between items-center border-b border-slate-900 pb-3">
-              <span className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                <Sparkles size={15} className="text-emerald-400 animate-pulse" />
+              <span className="text-sm font-bold text-violet-400 flex items-center gap-1.5">
+                <Sparkles size={15} className="text-violet-400 animate-pulse" />
                 {t[lang].enrichedTitle}
               </span>
-              <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-mono text-[10px] font-bold border border-emerald-500/15">
+              <span className="px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full font-mono text-[10px] font-bold border border-violet-500/15">
                 ✓ LIT API ACTIVE
               </span>
             </div>
 
             {/* Generated Meta tag snippet */}
-            <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 text-xs font-mono text-emerald-300">
-              <span className="text-emerald-500/70 block mb-1 font-sans font-bold text-[10px] uppercase tracking-wider">
+            <div className="bg-violet-500/5 p-3 rounded-xl border border-violet-500/10 text-xs font-mono text-violet-300">
+              <span className="text-violet-500/70 block mb-1 font-sans font-bold text-[10px] uppercase tracking-wider">
                 {t[lang].apiSnippetTitle}
               </span>
               <code className="text-[10px] font-bold break-all">
@@ -227,19 +227,19 @@ export default function PromptSimulator({ lang = 'ru' }: { lang?: 'ru' | 'en' })
             <div>
               <div className="flex justify-between text-xs mb-1 font-mono">
                 <span className="text-slate-400">{t[lang].accuracyLabel}</span>
-                <span className="text-emerald-400 font-bold">{currentCase.enrichedAccuracy}%</span>
+                <span className="text-violet-400 font-bold">{currentCase.enrichedAccuracy}%</span>
               </div>
               <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-emerald-500 transition-all duration-500" 
+                  className="h-full bg-violet-500 transition-all duration-500" 
                   style={{ width: `${currentCase.enrichedAccuracy}%` }}
                 />
               </div>
             </div>
 
             {/* Simulated Response */}
-            <div className="flex-grow bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/10 flex flex-col gap-2">
-              <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+            <div className="flex-grow bg-violet-500/5 p-4 rounded-xl border border-violet-500/10 flex flex-col gap-2">
+              <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider">
                 {t[lang].resultTitle}
               </h4>
               <p className="text-xs text-slate-200 leading-relaxed font-sans font-medium">
@@ -252,7 +252,7 @@ export default function PromptSimulator({ lang = 'ru' }: { lang?: 'ru' | 'en' })
 
         {/* Detailed Insights Footer */}
         <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-900 flex flex-col md:flex-row gap-4 text-xs">
-          <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg shrink-0 h-fit">
+          <div className="p-2 bg-violet-500/10 text-violet-400 rounded-lg shrink-0 h-fit">
             <BookOpen size={16} />
           </div>
           <div>
@@ -266,15 +266,15 @@ export default function PromptSimulator({ lang = 'ru' }: { lang?: 'ru' | 'en' })
         {/* Benefits Checks */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-slate-900/60 pt-4 text-xs font-semibold text-slate-400">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+            <ShieldCheck size={14} className="text-violet-400 shrink-0" />
             <span>{t[lang].benefitCheck1}</span>
           </div>
           <div className="flex items-center gap-2">
-            <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+            <ShieldCheck size={14} className="text-violet-400 shrink-0" />
             <span>{t[lang].benefitCheck2}</span>
           </div>
           <div className="flex items-center gap-2">
-            <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+            <ShieldCheck size={14} className="text-violet-400 shrink-0" />
             <span>{t[lang].benefitCheck3}</span>
           </div>
         </div>

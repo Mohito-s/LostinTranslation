@@ -65,13 +65,21 @@ print(enhanced_prompt)
     <div id="code-example-container" className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden font-mono text-xs">
       {/* Code Header Tab Selectors */}
       <div className="flex bg-slate-900 border-b border-slate-800 px-4 py-2 justify-between items-center">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+          </span>
+          <span className="h-4 w-px bg-slate-800" />
+        </div>
         <div className="flex items-center gap-2">
           <button
             id="btn-code-lang-curl"
             onClick={() => setSelectedLang('curl')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
               selectedLang === 'curl' 
-                ? 'bg-slate-800 text-emerald-400' 
+                ? 'bg-slate-800 text-violet-400' 
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -83,7 +91,7 @@ print(enhanced_prompt)
             onClick={() => setSelectedLang('javascript')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
               selectedLang === 'javascript' 
-                ? 'bg-slate-800 text-emerald-400' 
+                ? 'bg-slate-800 text-violet-400' 
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -95,7 +103,7 @@ print(enhanced_prompt)
             onClick={() => setSelectedLang('python')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
               selectedLang === 'python' 
-                ? 'bg-slate-800 text-emerald-400' 
+                ? 'bg-slate-800 text-violet-400' 
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -111,7 +119,7 @@ print(enhanced_prompt)
           title="Copy snippet"
         >
           {copied ? (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold font-sans">
+            <span className="flex items-center gap-1 text-[10px] text-violet-400 font-bold font-sans">
               <Check size={12} /> Copied!
             </span>
           ) : (

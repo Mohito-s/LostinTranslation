@@ -1,13 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Neutral ramp: desaturated, dev-tool dark (Stripe/Supabase vibe).
+     Also defines the previously-broken slate-850/880/750 steps. */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #e4e4e7;
+  --color-slate-300: #d4d4d8;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-750: #33333c;
+  --color-slate-800: #222228;
+  --color-slate-850: #1a1a20;
+  --color-slate-880: #15151a;
+  --color-slate-900: #111116;
+  --color-slate-950: #0a0a0d;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  @apply bg-slate-950 text-slate-100 selection:bg-emerald-500/20 selection:text-emerald-300;
+  @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  background-image: radial-gradient(1200px 600px at 50% -10%, rgba(139, 92, 246, 0.07), transparent 70%);
   font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a31 transparent;
 }
