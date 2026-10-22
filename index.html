@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    
+    <!-- Primary Meta Tags -->
+    <title>LostInTranslation (LIT) — AI Cultural QA & Linguistic Middleware</title>
+    <meta name="title" content="LostInTranslation (LIT) — AI Cultural QA & Linguistic Middleware" />
+    <meta name="description" content="Автоматический контроль культурных потерь смысла при машинном переводе и обогащение промтов для LLM. Выявляем скрытые отказы, модальные частицы и потерю тональности." />
+    <meta name="keywords" content="cultural nuance, AI translation QA, linguistic middleware, потеря смысла, машинный перевод, LLM prompt enrichment, модальные частицы, i18n linter" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://lostintranslation.dev/" />
+
+    <!-- Multilingual Hreflang -->
+    <link rel="alternate" hreflang="ru" href="https://lostintranslation.dev/?lang=ru" />
+    <link rel="alternate" hreflang="en" href="https://lostintranslation.dev/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://lostintranslation.dev/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://lostintranslation.dev/" />
+    <meta property="og:title" content="LostInTranslation — Ваша LLM понимает слова. Мы возвращаем ей культурный смысл." />
+    <meta property="og:description" content="Автоматический Cultural QA для машинных переводов: проверка на скрытые отказы, сарказм и модальности перед отправкой клиентам или релизом." />
+    <meta property="og:image" content="https://lostintranslation.dev/og-preview.png" />
+    <meta property="og:image:secure_url" content="https://lostintranslation.dev/og-preview.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="LostInTranslation — AI Cultural QA & Linguistic Middleware Preview" />
+    <meta property="og:site_name" content="LostInTranslation API" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://lostintranslation.dev/" />
+    <meta name="twitter:title" content="LostInTranslation (LIT) — Cultural QA for AI Translations" />
+    <meta name="twitter:description" content="Detect cultural meaning losses in machine translations. Interactive sandbox & open dataset." />
+    <meta name="twitter:image" content="https://lostintranslation.dev/og-preview.png" />
+    <meta name="twitter:image:alt" content="LostInTranslation — AI Cultural QA & Linguistic Middleware Preview" />
+
+    <!-- Favicon: Editorial § Glyph in Warm Amber and Book Charcoal -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c1e26' stroke='%23373a46' stroke-width='1.5'/%3E%3Ctext x='16' y='23' font-family='Georgia, serif' font-size='22' font-weight='bold' fill='%23d4a373' text-anchor='middle'%3E§%3C/text%3E%3C/svg%3E" />
+
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://lostintranslation.dev/#organization",
+          "name": "LostInTranslation",
+          "url": "https://lostintranslation.dev",
+          "logo": "https://lostintranslation.dev/og-preview.png",
+          "sameAs": [
+            "https://github.com/Mohito-s/LostinTranslation"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://lostintranslation.dev/#website",
+          "url": "https://lostintranslation.dev",
+          "name": "LostInTranslation",
+          "publisher": {
+            "@id": "https://lostintranslation.dev/#organization"
+          },
+          "inLanguage": ["ru", "en"]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://lostintranslation.dev/#app",
+          "name": "LostInTranslation API",
+          "operatingSystem": "All",
+          "applicationCategory": "DeveloperApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Linguistic middleware and Cultural QA that detects cultural, modal and emotional nuance loss in machine-translated text.",
+          "url": "https://lostintranslation.dev"
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://lostintranslation.dev/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Что такое культурные потери при машинном переводе?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Это утрата или искажение скрытого подтекста, модальных частиц ('ведь', 'же', 'doch'), вежливого смягчения отказа ('да, но нет', '行けたら行く') или стилистического регистра при буквальном переводе нейросетями."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Как работает Cultural QA в LostInTranslation?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Сервис выполняет семантико-прагматический анализ текста, выявляет зоны искажения смысла, оценивает их критичность (High, Medium, Low) и формирует рекомендации для корректной передачи контекста."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Доступен ли проект с открытым исходным кодом?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Да, LostInTranslation распространяется под лицензией AGPL-3.0 и может быть развернут локально в вашей инфраструктуре."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+

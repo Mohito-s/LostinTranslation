@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14151b"/>
+      <stop offset="50%" stop-color="#1c1e26"/>
+      <stop offset="100%" stop-color="#121318"/>
+    </linearGradient>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#232632"/>
+      <stop offset="100%" stop-color="#1b1d25"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Vintage Newspaper Outer Border -->
+  <rect x="24" y="24" width="1152" height="582" fill="none" stroke="#2e323f" stroke-width="2"/>
+  <rect x="32" y="32" width="1136" height="566" fill="none" stroke="#d4a373" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Masthead Top Header -->
+  <text x="60" y="68" font-family="'Newsreader', Georgia, serif" font-size="13" font-style="italic" fill="#a1a1aa" letter-spacing="3">
+    VOL. I • DISPATCH NO. 2026 • LINGUISTIC JOURNAL &amp; MIDDLEWARE
+  </text>
+  <line x1="60" y1="84" x2="1140" y2="84" stroke="#2e323f" stroke-width="1"/>
+
+  <!-- Logo and Badge -->
+  <g transform="translate(60, 110)">
+    <rect width="52" height="52" rx="10" fill="#1c1e26" stroke="#d4a373" stroke-width="1.5"/>
+    <text x="26" y="37" font-family="'Newsreader', Georgia, serif" font-size="34" font-weight="bold" fill="#d4a373" text-anchor="middle">§</text>
+    <text x="70" y="30" font-family="'Newsreader', Georgia, serif" font-size="28" font-weight="bold" fill="#f4efe6">
+      LostInTranslation
+    </text>
+    <text x="70" y="48" font-family="'JetBrains Mono', monospace" font-size="12" fill="#d4a373" letter-spacing="1.5">
+      AI CULTURAL QA &amp; SEMANTIC MIDDLEWARE
+    </text>
+  </g>
+
+  <!-- Main Editorial Headline -->
+  <text x="60" y="224" font-family="'Newsreader', Georgia, serif" font-size="46" font-weight="bold" fill="#f4efe6" letter-spacing="-0.5">
+    Ваша LLM понимает слова.
+  </text>
+  <text x="60" y="278" font-family="'Newsreader', Georgia, serif" font-size="46" font-style="italic" fill="#d4a373" letter-spacing="-0.5">
+    Мы возвращаем ей культурный смысл.
+  </text>
+
+  <!-- Subheadline -->
+  <text x="60" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#d1d5db">
+    Автоматический контроль потерь тональности, скрытых отказов и прагматических нюансов перед публикацией.
+  </text>
+
+  <!-- Comparative Card (Editorial Box) -->
+  <g transform="translate(60, 370)" filter="url(#shadow)">
+    <!-- Box Body -->
+    <rect width="1080" height="175" rx="8" fill="url(#cardBg)" stroke="#373a46" stroke-width="1.5"/>
+    
+    <!-- Left Column: Raw Translation -->
+    <g transform="translate(30, 24)">
+      <rect width="180" height="22" rx="4" fill="#2d1b1e" stroke="#e06c75" stroke-width="0.8"/>
+      <text x="90" y="15" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#f87171" text-anchor="middle">
+        ДОСЛОВНЫЙ ПЕРЕВОД LLM
+      </text>
+      <text x="0" y="54" font-family="'JetBrains Mono', monospace" font-size="16" fill="#fca5a5">
+        "行けたら行く" → "I will go if I can"
+      </text>
+      <text x="0" y="80" font-family="system-ui, sans-serif" font-size="13" fill="#9ca3af">
+        Буквально: обещание прийти при возможности.
+      </text>
+      <text x="0" y="104" font-family="system-ui, sans-serif" font-size="12" fill="#ef4444" font-weight="600">
+        ✕ Смысловая инверсия: ложное ожидание
+      </text>
+    </g>
+
+    <!-- Divider -->
+    <line x1="500" y1="20" x2="500" y2="155" stroke="#373a46" stroke-width="1" stroke-dasharray="4 4"/>
+
+    <!-- Right Column: LostInTranslation Cultural QA -->
+    <g transform="translate(530, 24)">
+      <rect width="190" height="22" rx="4" fill="#2c2419" stroke="#d4a373" stroke-width="0.8"/>
+      <text x="95" y="15" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#d4a373" text-anchor="middle">
+        § CULTURAL QA ДЕТЕКТОР
+      </text>
+      <text x="0" y="54" font-family="'Newsreader', Georgia, serif" font-size="18" font-weight="bold" fill="#f4efe6">
+        Непрямой вежливый отказ (Hedging, 89% уверенность)
+      </text>
+      <text x="0" y="80" font-family="system-ui, sans-serif" font-size="13" fill="#d4d4d8">
+        В японском контексте это мягкий отказ («скорее всего, не смогу»).
+      </text>
+      <text x="0" y="106" font-family="'JetBrains Mono', monospace" font-size="13" fill="#34d399" font-weight="bold">
+        ✓ Альтернатива: "I probably won't be able to make it"
+      </text>
+    </g>
+  </g>
+
+  <!-- Bottom Badges / Tech Specs -->
+  <g transform="translate(60, 575)">
+    <text x="0" y="0" font-family="'JetBrains Mono', monospace" font-size="12" fill="#a1a1aa">
+      [AGPL-3.0] • REST API • Gemini 3.5 • React 18 &amp; Express • 0-100 Cultural QA Scoring
+    </text>
+    <text x="1080" y="0" font-family="'JetBrains Mono', monospace" font-size="12" fill="#d4a373" text-anchor="end">
+      https://lostintranslation.dev
+    </text>
+  </g>
+</svg>

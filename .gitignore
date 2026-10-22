@@ -1,0 +1,28 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+local_db.json
+.playwright-mcp/
+test-results/
+playwright-report/
+.system_generated/
+
+# AI agent directories and configs (kept locally, hidden from git)
+.agents/
+.opencode/
+
+# AI internal journals & private planning docs (kept locally, hidden from git)
+AGENTS.md
+GEMINI.md
+UPGRADE_PLAN.md
+PRODUCT_PLAN.md
+TMA_DB_GUIDE.md
+SITE_REFERENCES.md
+WORKLOG_*.md
+PROGRESS_TRACKER.md
+PLAYBOOK_*.md
