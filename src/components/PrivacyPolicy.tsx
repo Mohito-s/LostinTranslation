@@ -357,7 +357,7 @@ export default function PrivacyPolicy({ lang, onNavigateHome, onOpenSupport }: P
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={onOpenSupport}
-              className="apple-btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-black font-semibold text-xs transition-colors cursor-pointer shadow-lg"
+              className="celestial-btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 font-semibold text-xs transition-colors cursor-pointer shadow-[0_0_20px_rgba(56,189,248,0.25)] hover:shadow-[0_0_25px_rgba(56,189,248,0.4)] active:scale-98"
             >
               <HelpCircle className="w-4 h-4" />
               {isRu ? 'Форма поддержки разработчиков' : 'Developer Support Window'}

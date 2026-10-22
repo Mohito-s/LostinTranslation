@@ -1029,7 +1029,7 @@ export default function App() {
                   <button
                     id="btn-hero-demo"
                     onClick={() => switchTab('demo')}
-                    className="w-full sm:w-auto px-7 py-3 bg-white hover:bg-slate-100 text-black font-semibold rounded-full shadow-[0_0_35px_rgba(255,255,255,0.35)] transition-all flex items-center justify-center gap-2.5 cursor-pointer text-sm hover:scale-[1.03]"
+                    className="celestial-btn-primary w-full sm:w-auto px-7 py-3 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 font-semibold rounded-full border border-sky-400/40 backdrop-blur-md shadow-[0_0_35px_rgba(56,189,248,0.35)] hover:shadow-[0_0_45px_rgba(56,189,248,0.5)] transition-all flex items-center justify-center gap-2.5 cursor-pointer text-sm hover:scale-[1.03]"
                   >
                     <span>{TRANSLATIONS[lang].heroBtnSandbox}</span>
                     <ArrowRight size={15} />
@@ -1307,7 +1307,7 @@ export default function App() {
                       id="auth-submit-btn"
                       type="submit"
                       disabled={authLoading}
-                      className="apple-btn-primary w-full mt-2 py-3 bg-white hover:bg-slate-100 text-black font-sans font-bold text-xs rounded-xl transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                      className="celestial-btn-primary w-full mt-2 py-3 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 font-sans font-bold text-xs rounded-xl transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(56,189,248,0.25)] hover:shadow-[0_0_25px_rgba(56,189,248,0.4)] active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {authLoading ? (
                         <RefreshCw size={13} className="animate-spin" />
@@ -1473,7 +1473,7 @@ export default function App() {
                       id="btn-submit-key-generation"
                       type="submit"
                       disabled={keyGenerationLoading || !newKeyName.trim()}
-                      className="apple-btn-primary w-full py-2.5 bg-white hover:bg-slate-100 text-black font-sans font-bold text-xs rounded-xl transition-all disabled:opacity-45 shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="celestial-btn-primary w-full py-2.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 font-sans font-bold text-xs rounded-xl transition-all disabled:opacity-45 shadow-[0_0_20px_rgba(56,189,248,0.25)] hover:shadow-[0_0_25px_rgba(56,189,248,0.4)] active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {keyGenerationLoading ? (
                         <RefreshCw size={12} className="animate-spin" />

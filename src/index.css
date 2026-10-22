@@ -69,11 +69,24 @@ body {
   transform: translateY(-2px);
 }
 
-.apple-btn-primary {
+.celestial-btn-primary, .apple-btn-primary {
+  background: rgba(14, 165, 233, 0.16);
+  color: #f0f9ff;
+  border: 1px solid rgba(56, 189, 248, 0.40);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.25);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.apple-btn-primary:active {
+.celestial-btn-primary:hover, .apple-btn-primary:hover {
+  background: rgba(14, 165, 233, 0.28);
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: 0 0 32px rgba(56, 189, 248, 0.45);
+  color: #ffffff;
+}
+
+.celestial-btn-primary:active, .apple-btn-primary:active {
   transform: scale(0.97);
 }
 

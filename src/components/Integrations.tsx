@@ -389,7 +389,7 @@ export default function Integrations({ lang, onNavigateToDemo }: IntegrationsPro
           href="https://github.com/Mohito-s/LostinTranslation"
           target="_blank"
           rel="noreferrer"
-          className="apple-btn-primary px-5 py-2.5 bg-white hover:bg-slate-100 text-black text-xs sm:text-sm font-sans font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-98"
+          className="celestial-btn-primary px-5 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 text-xs sm:text-sm font-sans font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(56,189,248,0.25)] hover:shadow-[0_0_25px_rgba(56,189,248,0.4)] flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-98"
         >
           <span>{isRu ? 'GitHub Репозиторий' : 'View GitHub Repo'}</span>
           <ExternalLink size={14} />

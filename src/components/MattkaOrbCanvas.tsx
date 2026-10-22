@@ -295,8 +295,20 @@ export const MattkaOrbCanvas: React.FC<MattkaOrbCanvasProps> = ({
 
     const clock = new THREE.Clock();
     let animationFrameId: number;
+    let isHidden = document.hidden;
+
+    const handleVisibilityChange = () => {
+      isHidden = document.hidden;
+      if (!isHidden) {
+        clock.getDelta(); // Reset clock delta on wake-up to prevent animation jumps
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     const animate = () => {
+      if (isHidden) return; // GPU Sleep: completely halt WebGL raymarching on background tabs
       animationFrameId = requestAnimationFrame(animate);
 
       const d = Math.min(clock.getDelta(), 0.1);
@@ -328,6 +340,7 @@ export const MattkaOrbCanvas: React.FC<MattkaOrbCanvasProps> = ({
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('resize', handleResize);

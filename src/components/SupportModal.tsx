@@ -301,7 +301,7 @@ export default function SupportModal({
               </div>
               <button
                 onClick={onClose}
-                className="apple-btn-primary px-4 py-1.5 bg-white hover:bg-slate-100 text-black font-sans font-bold text-xs rounded-xl transition-all cursor-pointer shadow-md active:scale-98"
+                className="celestial-btn-primary px-4 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 font-sans font-bold text-xs rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(56,189,248,0.25)] hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] active:scale-98"
               >
                 {t[lang].closeBtn}
               </button>

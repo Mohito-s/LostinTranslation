@@ -212,12 +212,12 @@ export default function ApiDocs({ lang = 'ru', onNavigateToDashboard }: ApiDocsP
           <button
             onClick={executeLiveTest}
             disabled={runnerLoading}
-            className="apple-btn-primary px-5 py-2 bg-white hover:bg-slate-100 text-black font-sans font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-98 disabled:opacity-50"
+            className="celestial-btn-primary px-5 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/40 font-sans font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(56,189,248,0.25)] hover:shadow-[0_0_25px_rgba(56,189,248,0.4)] active:scale-98 disabled:opacity-50"
           >
             {runnerLoading ? (
-              <RefreshCw size={14} className="animate-spin text-black" />
+              <RefreshCw size={14} className="animate-spin text-sky-200" />
             ) : (
-              <Play size={14} className="text-black" />
+              <Play size={14} className="text-sky-200" />
             )}
             {runnerLoading ? t[lang].running : `${t[lang].runBtn}${runnerEndpoint}`}
           </button>
