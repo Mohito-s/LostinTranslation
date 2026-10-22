@@ -2,10 +2,11 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-AGPL%20v3-red.svg" alt="AGPL-3.0 License" />
-  <img src="https://img.shields.io/badge/Node.js-v18%2B-emerald.svg" alt="Node.js Version" />
-  <img src="https://img.shields.io/badge/Framework-React%2018%20%2B%20Vite-blue.svg" alt="React & Vite" />
+  <img src="https://img.shields.io/badge/Node.js-v20%2B-emerald.svg" alt="Node.js Version" />
+  <img src="https://img.shields.io/badge/Framework-React%2019%20%2B%20Vite-blue.svg" alt="React & Vite" />
   <img src="https://img.shields.io/badge/Database-PostgreSQL%20%2F%20Supabase-darkblue.svg" alt="PostgreSQL / Supabase" />
-  <img src="https://img.shields.io/badge/AI_Engine-Gemini-violet.svg" alt="Gemini Engine" />
+  <img src="https://img.shields.io/badge/AI_Engine-Gemini%203.5-violet.svg" alt="Gemini Engine" />
+  <a href="https://github.com/Mohito-s/LostinTranslation/actions/workflows/ci.yml"><img src="https://github.com/Mohito-s/LostinTranslation/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
 </p>
 
 ---
@@ -37,35 +38,36 @@
 ## ✨ Возможности / Features
 
 - **Двойной режим анализа:** `POST /api/analyze` — находит «потери смысла» в тексте; `POST /api/enhance` — обогащает исходный промт контекстным блоком перед отправкой в целевую LLM.
+- **Cultural QA & Compare:** `POST /api/compare` — оценивает пару «оригинал → перевод», рассчитывает процент сохраненного смысла (Severity Score) и формирует рекомендации.
+- **Token Saver & OpenAI Proxy:** `POST /v1/chat/completions` — drop-in совместимый прокси для экосистемы OpenAI / LangChain / Cursor, сжимающий промты до 65% токенов с сохранением культурной выразительности.
 - **Культурная глубина:** модальные частицы, вежливость, хеджирование, умаление (understatement), суффиксы и видовые формы глаголов (RU, JA, DE, ES, FR и др.).
-- **Портал разработчика:** регистрация, JWT-сессия, генерация/отзыв API-ключей, дашборд со статистикой использования.
-- **Rate limiting** по IP и по ключам (free: 10/день по IP, 50/день free-ключ, 1000/день paid-ключ).
-- **Двойное хранилище:** локальный JSON-файл (fallback) или PostgreSQL/Supabase.
-- **Гарантированный дев-режим:** без `GEMINI_API_KEY` сервер работает на качественных mock-ответах.
+- **Многоязычность:** глубокий анализ русского, японского, немецкого, испанского, французского и китайского языков.
+- **Разработческий шлюз:** выдача API-ключей (free / paid), rate-limiting (по IP и токенам), статистика вызовов, PBKDF2/HMAC-аутентификация.
+- **Встраиваемый виджет:** готовый JavaScript-скрипт (`public/widget.js`) для вставки анализа на любой внешний сайт или блог в 2 строки.
+- **PWA & Мобильная поддержка:** Progressive Web App с оффлайн-кэшированием и поддержкой мобильных экранов.
 
 ---
 
-## 🎨 Архитектура / System Architecture
+## 🏗 Архитектура / System Architecture
 
 ```text
 ┌────────────────────────────────────────────────────────┐
-│                   КЛИЕНТСКИЙ ИНТЕРФЕЙС                 │
-│              (React + Vite + Tailwind CSS)             │
+│                   CLIENT (SPA / PWA)                   │
+│         React 19 + Tailwind CSS + Lucide Icons         │
 └───────────────────────────┬────────────────────────────┘
-                            │
-              POST /api/analyze  OR  POST /api/enhance
-                            │
+                            │ HTTP / JSON
 ┌───────────────────────────▼────────────────────────────┐
-│                  EXPRESS BACKEND GATEWAY               │
+│                   EXPRESS GATEWAY                      │
 │               - Rate Limiter (IP & API Keys)           │
 │               - Crypto Auth Module (PBKDF2 + HMAC)     │
+│               - OpenAPI / Swagger UI (/docs)           │
 └───────────────────────────┬────────────────────────────┘
                             ├────────────────────────────┐
 ┌───────────────────────────▼────────────┐  ┌────────────▼────────────┐
 │             AI ENGINE                  │  │    PERSISTENCE LAYER    │
-│       - Gemini SDK Integration         │  │  - Primary: Supabase/PG │
+│       - Gemini 3.5 SDK Integration     │  │  - Primary: Supabase/PG │
 │       - Semantic Loss Analysis         │  │  - Fallback: Local JSON │
-│       - Real-time Context Injector     │  │    (Fully Git-Ignored!) │
+│       - Token Saver / Prompt Optimizer │  │    (Fully Git-Ignored!) │
 └────────────────────────────────────────┘  └─────────────────────────┘
 ```
 
@@ -75,13 +77,18 @@
 
 | Метод | URL | Авторизация | Описание |
 |-------|-----|-------------|----------|
+| `GET`  | `/api/health` | — | Системный healthcheck, аптайм сервера |
 | `POST` | `/api/analyze` | опционально (ключ или JWT) | Анализ текста на культурные потери смысла |
-| `POST` | `/api/compare` | опционально (ключ или JWT) | Cultural QA: оценка перевода парой «исходник → перевод», severity + скоринг |
+| `POST` | `/api/compare` | опционально (ключ или JWT) | Cultural QA: сравнение «исходник → перевод», severity + скоринг |
 | `POST` | `/api/enhance` | **обязателен API-ключ** (`x-api-key` / `Bearer`) | Обогащение промта культурным контекстом |
+| `POST` | `/api/optimize-prompt` | опционально (ключ или JWT) | Token Saver: перевод промта в high-density English (до 65% экономии токенов) |
+| `POST` | `/v1/chat/completions` | опционально (ключ или JWT) | Drop-in OpenAI-совместимый прокси с культурной оптимизацией |
+| `GET`  | `/api/growth/benchmark` | — | Публичный бенчмарк и сравнение моделей LLM |
+| `GET`  | `/api/growth/badge` | — | Динамический SVG-бейдж статуса для GitHub |
 | `POST` | `/api/auth/register` | — | Регистрация разработчика |
 | `POST` | `/api/auth/login` | — | Вход, получение JWT |
 | `GET`  | `/api/auth/me` | JWT | Профиль текущего пользователя |
-| `GET`  | `/api/keys` | JWT | Список ключей |
+| `GET`  | `/api/keys` | JWT | Список ключей разработчика |
 | `POST` | `/api/keys` | JWT | Генерация нового ключа `{ name, tier }` |
 | `POST` | `/api/keys/revoke` | JWT | Отзыв ключа `{ key }` |
 | `GET`  | `/api/dashboard/stats` | JWT | Статистика дашборда |
@@ -106,9 +113,10 @@ curl -X POST http://localhost:3000/api/enhance \
 |------------|-------------|----------|
 | `GEMINI_API_KEY` | да (для реальных вызовов ИИ) | Ключ Google AI Studio |
 | `SESSION_SECRET` | **да в проде** | Секрет подписи сессионных токенов. Без него прод не запустится |
-| `DATABASE_URL` | нет | PostgreSQL/Supabase. Пусто → локальный JSON |
-| `APP_URL` | нет | Публичный URL приложения (инжектится AI Studio) |
-| `SEED_DEMO_KEYS` | нет | `true` = сидировать общеизвестные демо-ключи |
+| `DATABASE_URL` | нет | PostgreSQL/Supabase строка подключения. Пусто → локальный JSON |
+| `OPENAI_API_KEY` | нет | Ключ OpenAI для прокси `/v1/chat/completions` |
+| `APP_URL` | нет | Публичный URL приложения (инжектируется AI Studio) |
+| `SEED_DEMO_KEYS` | нет | `true` = сидировать общеизвестные демо-ключи для локальных тестов |
 
 ---
 
@@ -118,52 +126,85 @@ curl -X POST http://localhost:3000/api/enhance \
 ```bash
 cp .env.example .env
 ```
-Заполните обязательные переменные: `GEMINI_API_KEY` и `SESSION_SECRET` (для прода).
+Укажите ваш `GEMINI_API_KEY` в файле `.env`.
 
-### 2. Установка и запуск
+### 2. Установка зависимостей
 ```bash
-npm install          # установка зависимостей
-npm run dev          # запуск разработки (React HMR + Node server)
-```
-Откройте `http://localhost:3000`.
-
-### 3. Проверка качества
-```bash
-npm run lint         # tsc --noEmit
-npm test             # vitest run
+npm install
 ```
 
-### 4. Сборка для Production
+### 3. Запуск в режиме разработки
 ```bash
-npm run build        # сборка клиента и бэкенда в dist/
-npm run start        # запуск собранного сервера
+npm run dev
+```
+Сервер и фронтенд запустятся на [http://localhost:3000](http://localhost:3000).
+
+### 4. Проверка качества (Zero-Regression Gate)
+```bash
+npm run check          # Запуск проверки типов (tsc) и всех тестов (vitest)
 ```
 
-### 5. Docker
+### 5. Сборка и запуск в production
 ```bash
-docker build -t lost-in-translation .
-docker run -p 3000:3000 --env-file .env lost-in-translation
+npm run build
+npm start
 ```
+
+### 6. Docker Compose (API + PostgreSQL)
+```bash
+docker compose up          # запуск API + PostgreSQL
+docker compose up -d       # то же самое, в фоне
+docker compose down        # остановка
+```
+> Для использования PostgreSQL раскомментируйте `DATABASE_URL` в `docker-compose.yml`.
+
+### 7. API-документация (Swagger UI)
+После запуска сервера откройте:
+```
+http://localhost:3000/docs
+```
+Интерактивная документация на базе OpenAPI-спецификации (`src/openapi.yaml`).
+
+### 8. PWA (Progressive Web App)
+Приложение поддерживает установку как PWA:
+- Автоматическая регистрация Service Worker
+- Кэширование статики и API-запросов (NetworkFirst)
+- Manifest с иконками для добавления на домашний экран
+
+Откройте DevTools → Application → Manifest для проверки.
+
+### 9. Встраиваемый виджет (Embeddable Widget)
+Виджет культурного анализа можно встроить на любой внешний сайт или блог без сторонних зависимостей:
+```html
+<!-- Вставка в HTML страницу -->
+<div id="lit-widget" data-theme="dark"></div>
+<script src="/widget.js" defer></script>
+```
+Для интерактивного тестирования откройте: `http://localhost:3000/widget-demo.html`.
 
 ---
 
 ## 📁 Структура проекта / Project Structure
 
 ```text
-server.ts                  — Express-гейтвей (auth, keys, rate limit, статика)
+server.ts                  — Express-гейтвей (auth, keys, rate limit, статика, swagger)
 src/
 ├── lib/
-│   ├── auth.ts            — PBKDF2-хэширование, HMAC-токены, middleware
+│   ├── auth.ts            — PBKDF2-хэширование, HMAC-токены (timingSafeEqual)
 │   ├── db.ts              — хранилище: локальный JSON или PostgreSQL/Supabase
-│   ├── analyze.ts         — /api/analyze: поиск культурных потерь (Gemini + mock)
-│   ├── enhance.ts         — /api/enhance: обогащение промтов (Gemini + mock)
+│   ├── analyze.ts         — /api/analyze, /api/compare: поиск культурных потерь
+│   ├── enhance.ts         — /api/enhance, /api/optimize-prompt: обогащение промтов
+│   ├── chatProxy.ts       — /v1/chat/completions: OpenAI drop-in Token Saver
+│   ├── growth.ts          — бенчмарки, автогенерация постов и бейджей
 │   └── rateLimit.ts       — лимиты по IP и API-ключам
-├── components/            — UI-компоненты (DemoWidget, PromptSimulator и др.)
+├── components/            — React-компоненты (DemoWidget, ApiDocs, Integrations и др.)
+├── openapi.yaml           — OpenAPI 3.0 спецификация
 ├── App.tsx                — SPA-оболочка
 ├── main.tsx
 └── index.css
-.dockerignore              — исключения для Docker-сборки
-.github/                   — CI-воркфлоу и шаблоны issue/PR
+public/                    — статические ассеты (виджет, og-карточки, robots.txt)
+docker-compose.yml         — оркестрация контейнеров
+Dockerfile                 — мультистейдж сборка
 ```
 
 ---
@@ -172,13 +213,13 @@ src/
 
 - **Локальный режим (по умолчанию):** при отсутствии `DATABASE_URL` сервер создаёт `local_db.json` (`.gitignore`). При первом запуске сидируются демо-ключи, **только если** `SEED_DEMO_KEYS=true`.
 - **PostgreSQL / Supabase:** укажите `DATABASE_URL` — сервер сам создаст таблицы `users`, `api_keys`, `usage_logs` при первом запуске.
-- **Firebase Firestore:** правила в `firestore.rules`; шаблон интеграции — в `TMA_DB_GUIDE.md`.
+- **Firebase Firestore:** правила в `firestore.rules`.
 
 ---
 
 ## 🤝 Разработка и контрибьюция / Contributing
 
-Проект открыт для вклада. Смотрите [CONTRIBUTING.md](CONTRIBUTING.md) и [ROADMAP.md](ROADMAP.md). Используйте шаблоны [issues](.github/ISSUE_TEMPLATE/) и [PR](.github/PULL_REQUEST_TEMPLATE.md).
+Проект открыт для сообщества! Подробные правила и инструкции по участию описаны в [CONTRIBUTING.md](CONTRIBUTING.md) и [ROADMAP.md](ROADMAP.md). Шаблоны для создания issues находятся в [.github/ISSUE_TEMPLATE/](.github/ISSUE_TEMPLATE/).
 
 ---
 
@@ -192,5 +233,6 @@ src/
 ---
 
 <p align="center" style="color: #64748b; font-size: 12px; margin-top: 50px;">
-  Разработано с заботой о культурных смыслах © 2026 LostInTranslation API. Распространяется под лицензией AGPL-3.0.
+  Разработано с заботой о культурных смыслах © 2026 LostInTranslation API. Распространяется под лицензией AGPL-3.0.<br>
+  Сделано с помощью Google Gemini • Built with Google Gemini
 </p>

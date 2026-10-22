@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: LostInTranslation API
+  version: 1.0.0
+  description: API for LostInTranslation service
+servers:
+  - url: /api
+paths:
+  /analyze:
+    post:
+      summary: Analyze text for cultural meaning loss
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                target_language:
+                  type: string
+              required:
+                - text
+      responses:
+        '200':
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+  /compare:
+    post:
+      summary: Compare source and translated texts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source_text:
+                  type: string
+                target_text:
+                  type: string
+                target_language:
+                  type: string
+              required:
+                - source_text
+                - target_text
+      responses:
+        '200':
+          description: Comparison result
+        '400':
+          description: Bad request
+  /enhance:
+    post:
+      summary: Enrich prompt with cultural context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                text:
+                  type: string
+              required:
+                - prompt
+                - text
+      responses:
+        '200':
+          description: Enhancement result
+        '403':
+          description: Forbidden (API key required)
+        '401':
+          description: Unauthorized
+  /optimize-prompt:
+    post:
+      summary: Token Saver - Translate prompt to high-density English preserving cultural nuance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                targetLanguage:
+                  type: string
+              required:
+                - prompt
+      responses:
+        '200':
+          description: Optimized English prompt with token savings stats
+        '400':
+          description: Bad request
+        '429':
+          description: Rate limit exceeded
+  /v1/chat/completions:
+    post:
+      summary: OpenAI Drop-in Proxy with Semantic & Token Optimization
+      description: Drop-in replacement for OpenAI API. Intercepts user prompt, optimizes Russian Cyrillic into high-density English, and returns response in Russian.
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  default: gpt-4o
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [system, user, assistant]
+                      content:
+                        type: string
+                    required:
+                      - role
+                      - content
+                temperature:
+                  type: number
+                  default: 0.7
+                stream:
+                  type: boolean
+                  default: false
+              required:
+                - messages
+      responses:
+        '200':
+          description: OpenAI-compatible chat completion object or SSE event stream
+        '400':
+          description: Bad request
+        '429':
+          description: Rate limit exceeded

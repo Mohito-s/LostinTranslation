@@ -24,10 +24,87 @@ function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
+function safeJsonParse(raw: string | undefined | null, fallback: any = {}): any {
+  if (!raw || typeof raw !== 'string') return fallback;
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    return fallback;
+  }
+}
+
 export interface EnhanceResponse {
   enhanced_prompt: string;
   context_added: boolean;
   losses_detected: number;
+}
+
+export interface TokenStats {
+  original_claude_tokens: number;
+  optimized_claude_tokens: number;
+  saved_claude_tokens: number;
+  saved_claude_percent: number;
+  original_gpt_tokens: number;
+  optimized_gpt_tokens: number;
+  saved_gpt_tokens: number;
+  saved_gpt_percent: number;
+}
+
+export interface OptimizePromptResponse {
+  original_prompt: string;
+  source_language: string;
+  target_output_language: string;
+  english_prompt: string;
+  system_directive: string;
+  full_optimized_prompt: string;
+  cultural_nuances_preserved: string[];
+  token_stats: TokenStats;
+}
+
+export function estimateTokens(text: string, isCyrillic: boolean): { claude: number; gpt: number } {
+  if (!text || text.trim().length === 0) return { claude: 0, gpt: 0 };
+  const len = text.length;
+  if (isCyrillic) {
+    return {
+      claude: Math.max(1, Math.round(len * 0.57)),
+      gpt: Math.max(1, Math.round(len * 0.40)),
+    };
+  } else {
+    return {
+      claude: Math.max(1, Math.round(len * 0.26)),
+      gpt: Math.max(1, Math.round(len * 0.24)),
+    };
+  }
+}
+
+export function computeTokenStats(originalText: string, englishText: string): TokenStats {
+  const cyrillicCount = (originalText.match(/[\u0400-\u04FF]/g) || []).length;
+  const isCyrillic = cyrillicCount / Math.max(1, originalText.length) > 0.2;
+
+  const originalTokens = estimateTokens(originalText, isCyrillic);
+  const optimizedTokens = estimateTokens(englishText, false);
+
+  const savedClaude = Math.max(0, originalTokens.claude - optimizedTokens.claude);
+  const savedClaudePercent = originalTokens.claude > 0
+    ? Math.round((savedClaude / originalTokens.claude) * 100)
+    : 0;
+
+  const savedGpt = Math.max(0, originalTokens.gpt - optimizedTokens.gpt);
+  const savedGptPercent = originalTokens.gpt > 0
+    ? Math.round((savedGpt / originalTokens.gpt) * 100)
+    : 0;
+
+  return {
+    original_claude_tokens: originalTokens.claude,
+    optimized_claude_tokens: optimizedTokens.claude,
+    saved_claude_tokens: savedClaude,
+    saved_claude_percent: savedClaudePercent,
+    original_gpt_tokens: originalTokens.gpt,
+    optimized_gpt_tokens: optimizedTokens.gpt,
+    saved_gpt_tokens: savedGpt,
+    saved_gpt_percent: savedGptPercent,
+  };
 }
 
 export async function enhancePrompt(prompt: string, text: string): Promise<EnhanceResponse> {
@@ -104,7 +181,7 @@ SOURCE TEXT TO PROCESS: "${text}"
       }
     });
 
-    const parsed = JSON.parse(response.text || '{}');
+    const parsed = safeJsonParse(response.text, {});
     return {
       enhanced_prompt: parsed.enhanced_prompt || `${prompt}\n\nText: ${text}`,
       context_added: parsed.context_added ?? false,
@@ -225,4 +302,197 @@ Text: ${text}`,
     context_added: true,
     losses_detected: 1
   };
+}
+
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+const promptOptimizationCache = new Map<string, CacheEntry<OptimizePromptResponse>>();
+const PROMPT_CACHE_MAX_ENTRIES = 500;
+const PROMPT_CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
+
+function getFromCache(key: string): OptimizePromptResponse | null {
+  const entry = promptOptimizationCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    promptOptimizationCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setToCache(key: string, data: OptimizePromptResponse): void {
+  if (promptOptimizationCache.size >= PROMPT_CACHE_MAX_ENTRIES) {
+    const firstKey = promptOptimizationCache.keys().next().value;
+    if (firstKey) promptOptimizationCache.delete(firstKey);
+  }
+  promptOptimizationCache.set(key, {
+    data,
+    expiresAt: Date.now() + PROMPT_CACHE_TTL_MS
+  });
+}
+
+export async function optimizePrompt(
+  prompt: string,
+  targetOutputLanguage: string = 'Russian'
+): Promise<OptimizePromptResponse> {
+  const cacheKey = `${(targetOutputLanguage || 'Russian').toLowerCase()}:::${prompt.trim()}`;
+  const cached = getFromCache(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    const mockRes = getMockPromptOptimization(prompt, targetOutputLanguage);
+    setToCache(cacheKey, mockRes);
+    return mockRes;
+  }
+
+  try {
+    const ai = getAiClient();
+    const systemInstruction = `
+You are an expert AI Linguistic Middleware and Prompt Token Optimizer for LostInTranslation.
+The user enters a prompt written in Russian (or another non-English high-context language).
+Russian Cyrillic consumes up to 2.5x–3x more tokens in Western LLMs (especially Anthropic Claude and OpenAI models) than concise English.
+
+CRITICAL PRIME OBJECTIVE: MAXIMUM TOKEN COMPRESSION & SAVINGS.
+The generated English prompt MUST consume FEWER tokens than the input Russian text.
+1. Translate and condense the prompt into ULTRA-COMPACT, punchy, high-density English.
+2. Cut all conversational filler, preambles, and meta-commentary. Keep the exact intent, constraints, and cultural tone in concise phrasing.
+3. Keep english_prompt significantly shorter in word count than the source.
+4. system_directive MUST be concise: "Reply in ${targetOutputLanguage || 'Russian'}".
+5. Identify 1 to 3 distinct cultural nuances preserved in this translation.
+
+Return a JSON object conforming to the schema.
+`;
+
+    const response = await ai.models.generateContent({
+      model: getModel(),
+      contents: `ORIGINAL PROMPT TO OPTIMIZE: "${prompt}"\nTARGET OUTPUT LANGUAGE: "${targetOutputLanguage}"`,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            source_language: { type: Type.STRING },
+            english_prompt: { type: Type.STRING },
+            system_directive: { type: Type.STRING },
+            cultural_nuances_preserved: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            }
+          },
+          required: ['source_language', 'english_prompt', 'system_directive', 'cultural_nuances_preserved']
+        }
+      }
+    });
+
+    const parsed = safeJsonParse(response.text, {});
+    const englishPrompt = parsed.english_prompt || prompt;
+    const systemDirective = parsed.system_directive || `Reply in ${targetOutputLanguage || 'Russian'}`;
+    const fullOptimized = `${englishPrompt}\n\n[Instruction: ${systemDirective}]`;
+    const tokenStats = computeTokenStats(prompt, fullOptimized);
+
+    const result: OptimizePromptResponse = {
+      original_prompt: prompt,
+      source_language: parsed.source_language || 'ru',
+      target_output_language: targetOutputLanguage,
+      english_prompt: englishPrompt,
+      system_directive: systemDirective,
+      full_optimized_prompt: fullOptimized,
+      cultural_nuances_preserved: Array.isArray(parsed.cultural_nuances_preserved) && parsed.cultural_nuances_preserved.length > 0
+        ? parsed.cultural_nuances_preserved
+        : ['Семантическое намерение сохранено'],
+      token_stats: tokenStats
+    };
+
+    setToCache(cacheKey, result);
+    return result;
+  } catch (error) {
+    logger.error({ err: error }, 'Error calling Gemini in optimizePrompt:');
+    return getMockPromptOptimization(prompt, targetOutputLanguage);
+  }
+}
+
+function getMockPromptOptimization(prompt: string, targetOutputLanguage: string = 'Russian'): OptimizePromptResponse {
+  const norm = prompt.toLowerCase();
+  let englishPrompt = '';
+  let nuances: string[] = [];
+
+  if (norm.includes('отказ') || norm.includes('отказать') || norm.includes('сжечь мосты')) {
+    englishPrompt = 'Decline the contractor politely yet firmly; avoid burning bridges.';
+    nuances = [
+      'Вежливый непрямой отказ (Face-saving refusal)',
+      'Смягчение категоричности без потери твёрдости позиции'
+    ];
+  } else if (norm.includes('дорожку') || norm.includes('посидим') || norm.includes('вылет')) {
+    englishPrompt = 'Write an evocative scene where characters observe the traditional quiet pause before departure ("posidim na dorozhku").';
+    nuances = [
+      'Традиционный ритуал паузы перед дорогой (Mindful pause)',
+      'Культурный маркер сосредоточения и защиты от тревоги'
+    ];
+  } else if (norm.includes('да, но нет') || norm.includes('да но нет') || norm.includes('дедлайн')) {
+    englishPrompt = "Politely convey hesitation: we likely won't approve the release by Friday's tight deadline.";
+    nuances = [
+      'Конверсационное согласие-подтверждение + скрытый отказ',
+      'Этикетная формула бесконфликтного сомнения'
+    ];
+  } else if (norm.includes('неплохо') || norm.includes('в принципе') || norm.includes('напильник')) {
+    englishPrompt = 'Give reserved feedback: functional draft, but needs hands-on polish for production.';
+    nuances = [
+      'Сдержанная похвала как сигнал умеренного разочарования',
+      'Дистанцирование от открытой конфронтации'
+    ];
+  } else if (norm.includes('по уму') || norm.includes('на совесть') || norm.includes('авториз')) {
+    englishPrompt = 'Build a production-ready user auth module with robust hashing, HMAC sessions, and strict input validation. No placeholders.';
+    nuances = [
+      'Идиома "по уму" (Industry best practices & robust architecture)',
+      'Идиома "на совесть" (Production-ready, no shortcuts or placeholders)'
+    ];
+  } else {
+    englishPrompt = compactTranslate(prompt);
+    nuances = [
+      'Семантическая компрессия (High-density English)',
+      'Устранение избыточных кириллических байт-токенов'
+    ];
+  }
+
+  const systemDirective = `Reply in ${targetOutputLanguage || 'Russian'}`;
+  const fullOptimized = `${englishPrompt}\n\n[Instruction: ${systemDirective}]`;
+  const tokenStats = computeTokenStats(prompt, fullOptimized);
+
+  return {
+    original_prompt: prompt,
+    source_language: 'ru',
+    target_output_language: targetOutputLanguage,
+    english_prompt: englishPrompt,
+    system_directive: systemDirective,
+    full_optimized_prompt: fullOptimized,
+    cultural_nuances_preserved: nuances,
+    token_stats: tokenStats
+  };
+}
+
+function compactTranslate(prompt: string): string {
+  const norm = prompt.toLowerCase();
+  if (norm.includes('код') || norm.includes('скрипт') || norm.includes('функци') || norm.includes('разработ')) {
+    return 'Write production-ready, clean code for the requested task. Handle edge cases and optimize performance.';
+  }
+  if (norm.includes('ошибк') || norm.includes('баг') || norm.includes('исправ')) {
+    return 'Debug and fix the issue. Provide root cause analysis and corrected code.';
+  }
+  if (norm.includes('объясн') || norm.includes('расскажи') || norm.includes('что такое')) {
+    return 'Explain the core concept clearly and concisely with practical examples.';
+  }
+  if (norm.includes('план') || norm.includes('архитектур') || norm.includes('структур')) {
+    return 'Design a concise, step-by-step architecture and implementation plan.';
+  }
+  if (norm.includes('ревью') || norm.includes('провер')) {
+    return 'Conduct a thorough code review. Highlight security, performance, and best-practice improvements.';
+  }
+  return 'Execute the task with high precision and concise phrasing.';
 }

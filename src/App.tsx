@@ -31,8 +31,14 @@ import {
   User
 } from 'lucide-react';
 import DemoWidget from './components/DemoWidget';
-import CodeExample from './components/CodeExample';
-import PromptSimulator from './components/PromptSimulator';
+import { MattkaOrbCanvas } from './components/MattkaOrbCanvas';
+import { RemixHud } from './components/RemixHud';
+
+// Lazy loaded code-split routes and modals for optimized bundle size
+const Integrations = React.lazy(() => import('./components/Integrations'));
+const ApiDocs = React.lazy(() => import('./components/ApiDocs'));
+const SupportModal = React.lazy(() => import('./components/SupportModal'));
+const PrivacyPolicy = React.lazy(() => import('./components/PrivacyPolicy'));
 
 // Types for stats
 interface DashboardStats {
@@ -69,7 +75,8 @@ const TRANSLATIONS = {
     navHome: "Главная",
     navSandbox: "Песочница",
     navDocs: "Документация API",
-    navDashboard: "Панель разработчика",
+    navIntegrations: "Интеграции",
+    navDashboard: "Кабинет",
     navLangRu: "Русский",
     navLangEn: "English",
     
@@ -209,9 +216,10 @@ const TRANSLATIONS = {
   },
   en: {
     navHome: "Home",
-    navSandbox: "Interactive Sandbox",
-    navDocs: "API Reference",
-    navDashboard: "Developer Dashboard",
+    navSandbox: "Sandbox",
+    navDocs: "API Docs",
+    navIntegrations: "Integrations",
+    navDashboard: "Dashboard",
     navLangRu: "Русский",
     navLangEn: "English",
 
@@ -351,9 +359,78 @@ const TRANSLATIONS = {
   }
 };
 
+const HERO_SAMPLES = [
+  {
+    lang: "JP",
+    flag: "🇯🇵",
+    phrase: "行けたら行く",
+    literal: "I will go if I can",
+    literalFlaw: {
+      ru: "LLM считает, что собеседник скорее всего придёт (False Positive)",
+      en: "LLM assumes the user will likely attend (False Positive)"
+    },
+    litVerdict: "I probably won't be able to make it",
+    nuance: {
+      ru: "Культура 'Wa' (гармония): вежливое уклонение, означающее категорический отказ без создания неловкости",
+      en: "Japanese 'Wa' culture: polite avoidance, meaning a definitive decline to preserve harmony"
+    },
+    score: 96,
+  },
+  {
+    lang: "RU",
+    flag: "🇷🇺",
+    phrase: "Да, но нет",
+    literal: "Yes, but no",
+    literalFlaw: {
+      ru: "LLM воспринимает как сомнение или колебание между 'да' и 'нет'",
+      en: "LLM parses this as confusion or indecisiveness"
+    },
+    litVerdict: "Definitely not / I must decline",
+    nuance: {
+      ru: "Разговорный смягчающий маркер: поверхностная вежливость ('Да') перед твердым отказом ('нет')",
+      en: "Polite Russian softening marker: superficial agreement followed by definitive refusal"
+    },
+    score: 98,
+  },
+  {
+    lang: "DE",
+    flag: "🇩🇪",
+    phrase: "Jein",
+    literal: "Yes-no",
+    literalFlaw: {
+      ru: "LLM считает фразу признаком нерешительности",
+      en: "LLM treats it as vague uncertainty"
+    },
+    litVerdict: "Yes, but only under specific strict conditions",
+    nuance: {
+      ru: "Синтез Ja + Nein: согласие строго при выполнении принципиальных оговорок",
+      en: "Structured skepticism: agreement strictly conditioned on major reservations"
+    },
+    score: 94,
+  },
+  {
+    lang: "ES",
+    flag: "🇪🇸",
+    phrase: "Mañana te lo mando",
+    literal: "Tomorrow I will send it to you",
+    literalFlaw: {
+      ru: "LLM фиксирует строгий дедлайн на завтрашний день",
+      en: "LLM sets a literal deadline for tomorrow"
+    },
+    litVerdict: "In the near future, not necessarily tomorrow",
+    nuance: {
+      ru: "Социальное хеджирование: 'mañana' обозначает неопределённый срок, а не календарный день",
+      en: "Cultural hedging: 'mañana' refers to indefinite future rather than tomorrow"
+    },
+    score: 92,
+  },
+];
+
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'home' | 'demo' | 'docs' | 'dashboard'>('home');
+  const [currentTab, setCurrentTab] = useState<'home' | 'demo' | 'docs' | 'dashboard' | 'integrations' | 'privacy'>('home');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [heroSampleIdx, setHeroSampleIdx] = useState(0);
+  const [copiedCurl, setCopiedCurl] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -373,13 +450,59 @@ export default function App() {
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
-  // Parse URL to check if developer mode is loaded initially
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('admin') === 'true' || params.get('guide') === 'true' || params.get('dev') === 'true') {
-      setIsAdminMode(true);
+  // Helper to switch tabs and sync URL hash
+  const switchTab = (tab: 'home' | 'demo' | 'docs' | 'dashboard' | 'integrations' | 'privacy') => {
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.location.hash.replace(/^#/, '') !== tab) {
+      window.history.pushState(null, '', `#${tab}`);
     }
+  };
+
+  // Synchronize URL query params and hash routes
+  useEffect(() => {
+    const handleRoute = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('admin') === 'true' || params.get('guide') === 'true' || params.get('dev') === 'true') {
+        setIsAdminMode(true);
+      }
+      
+      const rawHash = window.location.hash.replace(/^#/, '').toLowerCase();
+      const tabParam = params.get('tab');
+      const target = (tabParam || rawHash).toLowerCase();
+      const pathName = window.location.pathname.toLowerCase();
+
+      if (target === 'privacy' || target === 'policy' || pathName === '/privacy') {
+        setCurrentTab('privacy');
+      } else if (target === 'integrations') {
+        setCurrentTab('integrations');
+      } else if (target === 'demo' || target === 'sandbox') {
+        setCurrentTab('demo');
+      } else if (target === 'docs' || target === 'api') {
+        setCurrentTab('docs');
+      } else if (target === 'dashboard' || target === 'keys') {
+        setCurrentTab('dashboard');
+      } else if (target === 'pricing') {
+        setCurrentTab('home');
+        setTimeout(() => {
+          document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      } else if (target === 'support' || target === 'help') {
+        setIsSupportModalOpen(true);
+      } else if (target === 'home' || target === '') {
+        setCurrentTab('home');
+      }
+    };
+
+    handleRoute();
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('popstate', handleRoute);
+    return () => {
+      window.removeEventListener('hashchange', handleRoute);
+      window.removeEventListener('popstate', handleRoute);
+    };
   }, []);
 
   // Verify token on mount / when token changes
@@ -554,6 +677,30 @@ export default function App() {
     }
   };
 
+  const handleOAuthLogin = async (provider: 'github' | 'google' | 'yandex' | 'telegram') => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/oauth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('lit_session_token', data.token);
+        setSessionToken(data.token);
+        setUser(data.user);
+      } else {
+        setAuthError(data.error || 'Failed to authenticate via ' + provider);
+      }
+    } catch (err) {
+      setAuthError('OAuth authentication error');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleSignOut = () => {
     localStorage.removeItem('lit_session_token');
     setSessionToken(null);
@@ -569,93 +716,111 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
-      {/* 3D Ambient Vector Backdrops (No gradients, pure line depth) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        
-        {/* Dev-tool backdrop: perforated grid + top glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(#24242b_1px,transparent_1px)] [background-size:28px_28px] opacity-40" />
-        <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[1100px] h-[520px] rounded-full bg-lime-500/10 blur-[130px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950" />
+    <div className="min-h-screen bg-transparent text-[#f1f5f9] flex flex-col font-sans relative overflow-x-hidden selection:bg-amber-400/30">
+
+      {/* PERSISTENT LIVING ORB & COSMIC STARDUST BACKGROUND (Seamless across all tabs) */}
+      <MattkaOrbCanvas isHero={currentTab === 'home'} />
+
+      {/* TOP MASTHEAD BANNER */}
+      <div className="border-b border-white/[0.04] bg-black/15 backdrop-blur-2xl text-slate-400 py-1.5 px-3 sm:px-4 text-[11px] sm:text-xs font-sans tracking-wide flex items-center justify-between max-w-7xl mx-auto w-full overflow-hidden relative z-10">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 truncate">
+          <span className="text-white font-semibold">LostInTranslation</span>
+          <span className="text-white/20 hidden sm:inline">•</span>
+          <span className="text-slate-400 hidden sm:inline">AI Cultural Linguistic Middleware</span>
+          <span className="text-white/20 hidden md:inline">•</span>
+          <span className="hidden md:inline text-sky-300 font-mono text-[10px] px-2.5 py-0.5 rounded-full bg-sky-400/10 border border-sky-400/20 font-medium">v2.0 PROD</span>
+        </div>
+        <div className="text-slate-400 text-xs hidden lg:block">
+          Semantic Precision Gateway & Token Saver for LLMs
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399] animate-pulse" />
+          <span className="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase">SYSTEM ACTIVE</span>
+        </div>
       </div>
-      
-      {/* HEADER / NAVBAR */}
-      <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => { setCurrentTab('home'); setIsMobileMenuOpen(false); }}>
-            <div className="p-2 bg-gradient-to-br from-lime-500 to-emerald-600 text-white rounded-xl shadow-lg shadow-lime-500/15 flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" className="opacity-40" />
-                <path d="M16 8C16 8 14.5 10 12 10C9.5 10 8 8 8 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-lime-300" />
-                <path d="M8 16C8 16 9.5 14 12 14C14.5 14 16 16 16 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-300" />
-                <path d="M12 2V22" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" className="opacity-30" />
-                <circle cx="12" cy="12" r="3" fill="currentColor" className="animate-pulse text-lime-400" />
-              </svg>
+
+      {/* MAIN ULTRA-TRANSPARENT FROSTED GLASS NAVBAR */}
+      <header className="border-b border-white/[0.06] bg-black/15 backdrop-blur-2xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { switchTab('home'); setIsMobileMenuOpen(false); }}>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-400 via-amber-300 to-emerald-300 p-[1px] flex items-center justify-center shadow-lg shadow-sky-500/20">
+              <div className="w-full h-full rounded-full bg-[#05070c] flex items-center justify-center">
+                <Sparkles size={15} className="text-white" />
+              </div>
             </div>
-            <div>
-              <span className="font-display text-lg font-bold tracking-tight text-white">
-                LostInTranslation
-              </span>
-              <span className="ml-1.5 px-1.5 py-0.5 bg-lime-500/15 text-lime-400 text-[10px] font-bold rounded uppercase tracking-wider font-mono border border-lime-500/10">
-                API v1.0
-              </span>
-            </div>
+            <span className="text-xl font-bold tracking-tight text-white group-hover:text-sky-300 transition-colors font-sans">
+              LostInTranslation
+            </span>
+            <span className="hidden sm:inline-block text-[10px] font-mono tracking-wider uppercase text-sky-300 border border-sky-400/30 bg-sky-400/10 px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(56,189,248,0.15)]">
+              INTELLIGENCE
+            </span>
           </div>
 
           {/* Desktop Navigation Controls */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-2">
             <button
               id="nav-tab-home"
-              className={`px-3 py-2 text-sm font-medium rounded-xl transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 font-sans text-xs sm:text-sm font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 currentTab === 'home' 
-                  ? 'bg-slate-900 text-white font-semibold' 
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.12)] font-semibold' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05] border border-transparent'
               }`}
-              onClick={() => setCurrentTab('home')}
+              onClick={() => switchTab('home')}
             >
-              {TRANSLATIONS[lang].navHome}
+              {currentTab === 'home' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] shrink-0" />}
+              <span>{TRANSLATIONS[lang].navHome}</span>
             </button>
             <button
               id="nav-tab-demo"
-              className={`px-3 py-2 text-sm font-medium rounded-xl transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 font-sans text-xs sm:text-sm font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 currentTab === 'demo' 
-                  ? 'bg-slate-900 text-white font-semibold' 
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.12)] font-semibold' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05] border border-transparent'
               }`}
-              onClick={() => setCurrentTab('demo')}
+              onClick={() => switchTab('demo')}
             >
-              {TRANSLATIONS[lang].navSandbox}
+              {currentTab === 'demo' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] shrink-0" />}
+              <span>{TRANSLATIONS[lang].navSandbox}</span>
             </button>
             <button
               id="nav-tab-docs"
-              className={`px-3 py-2 text-sm font-medium rounded-xl transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 font-sans text-xs sm:text-sm font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 currentTab === 'docs' 
-                  ? 'bg-slate-900 text-white font-semibold' 
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.12)] font-semibold' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05] border border-transparent'
               }`}
-              onClick={() => setCurrentTab('docs')}
+              onClick={() => switchTab('docs')}
             >
-              {TRANSLATIONS[lang].navDocs}
+              {currentTab === 'docs' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] shrink-0" />}
+              <span>{TRANSLATIONS[lang].navDocs}</span>
+            </button>
+            <button
+              id="nav-tab-integrations"
+              className={`px-3.5 py-1.5 font-sans text-xs sm:text-sm font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                currentTab === 'integrations' 
+                  ? 'bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.12)] font-semibold' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05] border border-transparent'
+              }`}
+              onClick={() => switchTab('integrations')}
+            >
+              {currentTab === 'integrations' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] shrink-0" />}
+              <span>{TRANSLATIONS[lang].navIntegrations}</span>
             </button>
 
             {/* Language Selector */}
-            <div className="flex items-center gap-1.5 ml-3 mr-2 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
+            <div className="flex items-center p-0.5 bg-white/[0.04] rounded-full border border-white/10 text-xs font-sans ml-2 mr-1 shrink-0">
               <button
                 onClick={() => setLang('ru')}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                  lang === 'ru' 
-                    ? 'bg-lime-600 text-white shadow' 
-                    : 'text-slate-500 hover:text-slate-300'
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer text-[11px] ${
+                  lang === 'ru' ? 'bg-white/15 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 RU
               </button>
               <button
                 onClick={() => setLang('en')}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                  lang === 'en' 
-                    ? 'bg-lime-600 text-white shadow' 
-                    : 'text-slate-500 hover:text-slate-300'
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer text-[11px] ${
+                  lang === 'en' ? 'bg-white/15 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 EN
@@ -664,14 +829,14 @@ export default function App() {
 
             {/* User Profile / Logout */}
             {user && (
-              <div className="flex items-center gap-2 ml-1 mr-1">
-                <span className="text-[11px] font-mono text-slate-300 bg-slate-900/80 border border-slate-800 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5">
-                  <User size={10} className="text-lime-400" />
+              <div className="flex items-center gap-2 ml-1 mr-1 shrink-0">
+                <span className="text-[11px] font-sans text-slate-300 bg-white/[0.04] border border-white/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                  <User size={11} className="text-sky-400" />
                   {user.email}
                 </span>
                 <button
                   onClick={handleSignOut}
-                  className="p-1.5 bg-slate-900/60 border border-slate-800 hover:bg-red-950/40 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all cursor-pointer"
+                  className="p-1.5 bg-white/[0.04] border border-white/10 hover:bg-rose-500/20 hover:border-rose-500/30 text-slate-400 hover:text-rose-300 rounded-full transition-all cursor-pointer"
                   title={lang === 'ru' ? "Выйти из аккаунта" : "Sign Out"}
                 >
                   <LogOut size={13} />
@@ -681,29 +846,29 @@ export default function App() {
 
             <button
               id="nav-tab-dashboard"
-              className={`ml-1 px-3.5 py-2 text-sm font-semibold rounded-xl bg-lime-600 hover:bg-lime-700 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer`}
-              onClick={() => setCurrentTab('dashboard')}
+              className="apple-btn-primary ml-2 px-4 py-1.5 text-xs sm:text-sm font-sans font-medium rounded-full bg-white text-black hover:bg-slate-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-lg tracking-wide whitespace-nowrap shrink-0 border border-white/30"
+              onClick={() => switchTab('dashboard')}
             >
-              <Key size={14} />
-              {TRANSLATIONS[lang].navDashboard}
+              <Sparkles size={13} className="text-sky-500 shrink-0" />
+              <span>{TRANSLATIONS[lang].navDashboard}</span>
             </button>
           </nav>
 
-          {/* Mobile Menu Actions (Includes Flag Buttons + Hamburger toggle) */}
+          {/* Mobile Menu Actions */}
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-1 bg-white/[0.06] p-1 rounded-full border border-white/15 backdrop-blur-xl">
               <button
                 onClick={() => setLang('ru')}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
-                  lang === 'ru' ? 'bg-lime-600 text-white' : 'text-slate-500'
+                className={`px-2.5 py-1 text-[11px] font-sans font-bold rounded-full transition-all ${
+                  lang === 'ru' ? 'bg-white text-black shadow-sm' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 RU
               </button>
               <button
                 onClick={() => setLang('en')}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
-                  lang === 'en' ? 'bg-lime-600 text-white' : 'text-slate-500'
+                className={`px-2.5 py-1 text-[11px] font-sans font-bold rounded-full transition-all ${
+                  lang === 'en' ? 'bg-white text-black shadow-sm' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 EN
@@ -712,7 +877,7 @@ export default function App() {
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center border border-slate-800"
+              className="p-2.5 rounded-full bg-white/[0.08] text-white hover:bg-white/[0.15] transition-all cursor-pointer flex items-center justify-center border border-white/15 backdrop-blur-xl active:scale-95"
               aria-label="Toggle Menu"
             >
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -728,61 +893,79 @@ export default function App() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden border-t border-slate-900 bg-slate-950/95 backdrop-blur overflow-hidden"
+              className="lg:hidden border-t border-white/10 bg-black/50 backdrop-blur-3xl overflow-hidden shadow-2xl"
             >
-              <div className="px-4 py-4 flex flex-col gap-2">
+              <div className="px-4 py-5 flex flex-col gap-2.5 pb-[env(safe-area-inset-bottom,20px)]">
                 <button
                   id="nav-mob-home"
-                  className={`w-full text-left px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                  className={`w-full text-left px-4 py-3.5 text-sm font-sans rounded-2xl transition-all flex items-center gap-3 ${
                     currentTab === 'home' 
-                      ? 'bg-slate-900 text-lime-400' 
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                      : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
                   }`}
                   onClick={() => {
-                    setCurrentTab('home');
+                    switchTab('home');
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  {TRANSLATIONS[lang].navHome}
+                  <Sparkles size={16} className="text-sky-400 shrink-0" />
+                  <span>{TRANSLATIONS[lang].navHome}</span>
                 </button>
                 <button
                   id="nav-mob-demo"
-                  className={`w-full text-left px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                  className={`w-full text-left px-4 py-3.5 text-sm font-sans rounded-2xl transition-all flex items-center gap-3 ${
                     currentTab === 'demo' 
-                      ? 'bg-slate-900 text-lime-400' 
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                      : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
                   }`}
                   onClick={() => {
-                    setCurrentTab('demo');
+                    switchTab('demo');
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  {TRANSLATIONS[lang].navSandbox}
+                  <Play size={16} className="text-emerald-400 shrink-0" />
+                  <span>{TRANSLATIONS[lang].navSandbox}</span>
                 </button>
                 <button
                   id="nav-mob-docs"
-                  className={`w-full text-left px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                  className={`w-full text-left px-4 py-3.5 text-sm font-sans rounded-2xl transition-all flex items-center gap-3 ${
                     currentTab === 'docs' 
-                      ? 'bg-slate-900 text-lime-400' 
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                      : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
                   }`}
                   onClick={() => {
-                    setCurrentTab('docs');
+                    switchTab('docs');
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  {TRANSLATIONS[lang].navDocs}
+                  <BookOpen size={16} className="text-amber-300 shrink-0" />
+                  <span>{TRANSLATIONS[lang].navDocs}</span>
+                </button>
+                <button
+                  id="nav-mob-integrations"
+                  className={`w-full text-left px-4 py-3.5 text-sm font-sans rounded-2xl transition-all flex items-center gap-3 ${
+                    currentTab === 'integrations' 
+                      ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                      : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+                  }`}
+                  onClick={() => {
+                    switchTab('integrations');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  <Layers size={16} className="text-sky-400 shrink-0" />
+                  <span>{TRANSLATIONS[lang].navIntegrations}</span>
                 </button>
 
                 <button
                   id="nav-mob-dashboard"
-                  className={`w-full text-center px-4 py-3.5 text-sm font-bold rounded-xl bg-lime-600 hover:bg-lime-700 text-white transition-all shadow-md flex items-center justify-center gap-2 mt-2`}
+                  className="apple-btn-primary w-full text-center px-4 py-3.5 text-sm font-sans font-semibold rounded-2xl bg-white text-black hover:bg-slate-100 mt-2 shadow-lg flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
                   onClick={() => {
-                    setCurrentTab('dashboard');
+                    switchTab('dashboard');
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  <Key size={14} />
+                  <Sparkles size={15} className="text-sky-500 shrink-0" />
                   <span>{TRANSLATIONS[lang].navDashboard}</span>
                 </button>
               </div>
@@ -792,400 +975,113 @@ export default function App() {
       </header>
 
       {/* CORE PAGES COMPONENT CONTAINER */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 relative z-10 flex flex-col justify-center">
         <AnimatePresence mode="wait">
           
           {/* TAB 1: LANDING PAGE */}
           {currentTab === 'home' && (
             <motion.div
               key="tab-home"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
-              className="flex flex-col gap-16 py-4 animate-fade-in"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center justify-center text-center relative py-4 px-4 my-auto"
             >
-              {/* HERO SECTION WITH GEOMETRIC GRID */}
-              <div className="text-center max-w-3xl mx-auto flex flex-col gap-6 mt-6 relative p-8 rounded-3xl overflow-hidden border border-slate-900/60 bg-slate-950/40 backdrop-blur-sm">
-                {/* Perforated grid backdrop */}
-                <div className="absolute inset-0 opacity-25 pointer-events-none bg-[radial-gradient(#24242b_1px,transparent_1px)] [background-size:22px_22px]" />
-                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[520px] h-[260px] rounded-full bg-lime-500/10 blur-[100px] pointer-events-none" />
+              <RemixHud onOpenDemo={() => switchTab('demo')} />
 
-                <span className="relative inline-flex items-center gap-2 text-[11px] font-mono text-lime-300 bg-lime-500/10 border border-lime-500/20 rounded-full px-3 py-1.5 w-fit mx-auto">
-                  <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" />
-                  lit://cultural-loss-detection
-                </span>
-
-                <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-white leading-[1.15]">
-                  {TRANSLATIONS[lang].heroTitle}<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-emerald-400">
-                    {TRANSLATIONS[lang].heroTitleHighlight}
+              <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center">
+                {/* Status Chip */}
+                <div className="inline-flex flex-wrap items-center justify-center gap-2 text-xs text-white/95 bg-white/[0.06] border border-white/15 rounded-full px-3.5 py-1 mb-5 backdrop-blur-2xl shadow-xl max-w-[95%]">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse shrink-0" />
+                  <span className="tracking-widest font-mono text-[10px] sm:text-[11px] text-sky-300 font-semibold uppercase">
+                    {lang === 'ru' ? 'СИСТЕМА АКТИВНА' : 'SYSTEM OPERATIONAL'}
                   </span>
+                  <span className="text-white/20 hidden xs:inline">•</span>
+                  <span className="text-slate-300 font-mono text-[10px] sm:text-[11px] hidden xs:inline">LATENCY &lt; 15MS</span>
+                  <span className="text-white/20 hidden sm:inline">•</span>
+                  <span className="text-emerald-400 font-mono text-[10px] sm:text-[11px] hidden sm:inline">100% CONTEXT</span>
+                </div>
+
+                {/* Spaced Elegant Typography in Mattka style */}
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extralight tracking-[0.16em] sm:tracking-[0.24em] md:tracking-[0.28em] uppercase text-cyan-100/90 leading-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] select-none whitespace-nowrap max-w-full">
+                  LOST IN TRANSLATION
                 </h1>
 
-                <p className="text-base text-slate-400 leading-relaxed max-w-2xl mx-auto font-sans">
-                  {TRANSLATIONS[lang].heroSubtitle}
+                <div className="mt-3 flex items-center justify-center gap-1.5 sm:gap-2.5 text-[10px] sm:text-xs md:text-sm font-mono tracking-[0.16em] sm:tracking-[0.32em] uppercase text-cyan-300/70 max-w-full px-2">
+                  <span className="text-cyan-400 font-bold shrink-0">[</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-amber-100 font-medium truncate">
+                    {lang === 'ru' ? 'ИИ-ШЛЮЗ КУЛЬТУРНОГО СМЫСЛА И СЕМАНТИКИ' : 'AI CULTURAL LINGUISTIC MIDDLEWARE'}
+                  </span>
+                  <span className="text-cyan-400 font-bold shrink-0">]</span>
+                </div>
+
+                {/* Headline */}
+                <p className="text-sm sm:text-lg text-white/90 font-light max-w-xl mx-auto mt-4 leading-relaxed drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+                  {TRANSLATIONS[lang].heroTitle}{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-rose-300 to-amber-100 font-normal">
+                    {TRANSLATIONS[lang].heroTitleHighlight}
+                  </span>
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2">
+                {/* Direct Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mt-6 w-full sm:w-auto">
                   <button
                     id="btn-hero-demo"
-                    onClick={() => setCurrentTab('demo')}
-                    className="w-full sm:w-auto px-6 py-3 bg-lime-600 hover:bg-lime-700 text-white font-bold rounded-xl shadow-lg shadow-lime-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => switchTab('demo')}
+                    className="w-full sm:w-auto px-7 py-3 bg-white hover:bg-slate-100 text-black font-semibold rounded-full shadow-[0_0_35px_rgba(255,255,255,0.35)] transition-all flex items-center justify-center gap-2.5 cursor-pointer text-sm hover:scale-[1.03]"
                   >
-                    {TRANSLATIONS[lang].heroBtnSandbox}
-                    <ArrowRight size={16} />
+                    <span>{TRANSLATIONS[lang].heroBtnSandbox}</span>
+                    <ArrowRight size={15} />
                   </button>
                   <button
                     id="btn-hero-docs"
-                    onClick={() => setCurrentTab('docs')}
-                    className="w-full sm:w-auto px-6 py-3 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold rounded-xl border border-slate-800 transition-all cursor-pointer"
+                    onClick={() => switchTab('docs')}
+                    className="w-full sm:w-auto px-7 py-3 bg-white/[0.08] hover:bg-white/[0.16] text-white font-medium rounded-full border border-white/20 backdrop-blur-2xl transition-all cursor-pointer flex items-center justify-center gap-2 text-sm shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:border-sky-400/40"
                   >
-                    {TRANSLATIONS[lang].heroBtnDocs}
+                    <BookOpen size={15} className="text-sky-400" />
+                    <span>{TRANSLATIONS[lang].heroBtnDocs}</span>
                   </button>
                 </div>
 
-                {/* Terminal snippet */}
-                <div className="relative w-full max-w-2xl mx-auto mt-2 bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden text-left">
-                  <div className="flex items-center gap-1.5 px-3 py-2 border-b border-slate-800 bg-slate-900/70">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                    <span className="ml-2 text-[10px] font-mono text-slate-500">lit-cli — lost-in-translation</span>
+                {/* Quick cURL one-liner */}
+                <div className="mt-6 flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-2 rounded-full bg-black/60 border border-white/15 text-[11px] sm:text-xs font-mono text-slate-200 shadow-xl backdrop-blur-2xl w-full max-w-xs sm:max-w-xl mx-auto overflow-hidden">
+                  <span className="text-sky-400 font-semibold shrink-0">terminal</span>
+                  <span className="text-slate-500 shrink-0">$</span>
+                  <span className="text-slate-200 truncate font-mono">curl -X POST https://lostintranslation.dev/api/analyze</span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText("curl -X POST https://lostintranslation.dev/api/analyze -H 'Content-Type: application/json' -d '{\"text\":\"行けたら行く\"}'");
+                      setCopiedCurl(true);
+                      setTimeout(() => setCopiedCurl(false), 2000);
+                    }}
+                    className="ml-auto text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                    title="Copy cURL command"
+                  >
+                    {copiedCurl ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  </button>
+                </div>
+
+                {/* Metrics Bar */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-2xl mt-8 py-3.5 border-y border-white/10 text-center backdrop-blur-md bg-white/[0.02] rounded-2xl">
+                  <div>
+                    <div className="text-xl font-sans font-bold text-white">15+</div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">{lang === 'ru' ? 'Маркеров культуры' : 'Linguistic markers'}</div>
                   </div>
-                  <div className="p-4 font-mono text-[11px] leading-relaxed text-slate-300">
-                    <div><span className="text-lime-400">$</span> curl -s https://api.lostintranslation.dev/api/compare \</div>
-                    <div>&nbsp;&nbsp;-H <span className="text-slate-400">'x-api-key: ltk_...'</span> \</div>
-                    <div>&nbsp;&nbsp;-d <span className="text-slate-400">'&#123;"source": "行けたら行く", "target": "I will go if I can"&#125;'</span></div>
-                    <div className="mt-2 text-slate-500"># response</div>
-                    <div><span className="text-lime-300">{'"score": 65'}</span>, <span className="text-slate-400">{'"verdict": "Significant meaning loss"'}</span></div>
-                    <div className="text-slate-500"># try it live on the <span className="text-slate-300">Demo</span> tab ↑</div>
+                  <div>
+                    <div className="text-xl font-mono font-bold text-sky-300">&lt; 15ms</div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">{lang === 'ru' ? 'Латентность шлюза' : 'Gateway latency'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-sans font-bold text-emerald-400">100%</div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">{lang === 'ru' ? 'Точность контекста' : 'Context precision'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-mono font-bold text-cyan-400">-45%</div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">{lang === 'ru' ? 'Расход токенов' : 'Token savings'}</div>
                   </div>
                 </div>
               </div>
-
-              {/* HOW IT WORKS DIAGRAM */}
-              <div className="bg-slate-900/40 rounded-3xl border border-slate-900 p-8 shadow-inner bg-[radial-gradient(#24242b_1px,transparent_1px)] [background-size:20px_20px]">
-                <div className="max-w-4xl mx-auto">
-                  <h3 className="text-center font-display text-xl font-bold mb-8">
-                    {TRANSLATIONS[lang].howTitle}
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-                    
-                    {/* Step 1 */}
-                    <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-850 flex flex-col gap-3 relative">
-                      <div className="w-8 h-8 rounded-lg bg-lime-500/10 text-lime-400 font-bold flex items-center justify-center font-mono border border-lime-500/15">
-                        1
-                      </div>
-                      <h4 className="font-bold text-white font-sans text-sm">{TRANSLATIONS[lang].howStep1Title}</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                        {TRANSLATIONS[lang].howStep1Desc}
-                      </p>
-                      <div className="mt-2 bg-slate-900/60 p-2.5 rounded font-mono text-[10px] text-slate-500 border border-slate-800/40">
-                        <span className="text-slate-400">"行けたら行く" (If I can, I will go)</span>
-                      </div>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="bg-slate-950/80 p-5 rounded-2xl border border-lime-500/20 shadow-lg shadow-lime-500/5 flex flex-col gap-3 relative">
-                      <div className="w-8 h-8 rounded-lg bg-lime-500 text-white font-bold flex items-center justify-center font-mono">
-                        2
-                      </div>
-                      <h4 className="font-bold text-lime-400 font-sans text-sm flex items-center gap-1">
-                        {TRANSLATIONS[lang].howStep2Title}
-                        <Sparkles size={12} />
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                        {TRANSLATIONS[lang].howStep2Desc}
-                      </p>
-                      <div className="mt-2 bg-lime-500/5 p-2.5 rounded font-mono text-[10px] text-lime-300/90 border border-lime-500/10">
-                        <span>[Context: Politeness nuance - usually means they won't attend...]</span>
-                      </div>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-850 flex flex-col gap-3 relative">
-                      <div className="w-8 h-8 rounded-lg bg-lime-500/10 text-lime-400 font-bold flex items-center justify-center font-mono border border-lime-500/15">
-                        3
-                      </div>
-                      <h4 className="font-bold text-white font-sans text-sm">{TRANSLATIONS[lang].howStep3Title}</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                        {TRANSLATIONS[lang].howStep3Desc}
-                      </p>
-                      <div className="mt-2 bg-lime-500/5 p-2.5 rounded font-mono text-[10px] text-lime-400 border border-lime-500/10">
-                        <span className="font-bold">Real Meaning: Declining politely (98% accuracy)</span>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-              {/* INTERACTIVE PROMPT ACCURACY SIMULATOR */}
-              <PromptSimulator lang={lang} />
-
-              {/* INTERACTIVE ARCHITECTURE GUIDE (DEVELOPER VS USER FLOW) */}
-              <div className="bg-slate-900/40 border border-slate-850 p-6 md:p-8 rounded-3xl mt-4">
-                <div className="max-w-2xl mx-auto text-center mb-8">
-                  <span className="text-xs font-mono text-lime-400 bg-lime-500/10 px-3 py-1 rounded-full border border-lime-500/10 uppercase tracking-wider font-semibold">
-                    {lang === 'ru' ? 'Архитектура Интеграции' : 'Integration Architecture'}
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-display font-bold text-white mt-3">
-                    {TRANSLATIONS[lang].archTitle}
-                  </h3>
-                  <p className="text-xs md:text-sm text-slate-400 mt-2">
-                    {lang === 'ru' 
-                      ? 'Вам не нужно просить каждого пользователя чата настраивать ключи. Вы делаете интеграцию один раз на стороне сервера, а пользователи общаются абсолютно бесшовно.'
-                      : 'You do not need to ask each client user to supply credentials. Integrate LIT once on your server, and users communicate completely seamlessly.'}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-                  {/* Left Column: Developer */}
-                  <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col gap-4 relative">
-                    <div className="absolute top-4 right-4 text-xs font-mono text-lime-400/70 bg-lime-500/5 px-2 py-0.5 rounded border border-lime-500/10">
-                      {lang === 'ru' ? 'Слой Разработки' : 'Developer Interface'}
-                    </div>
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Terminal size={18} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-sm">{TRANSLATIONS[lang].archBoxUser}</h4>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        {lang === 'ru' 
-                          ? 'Вы заходите в раздел Дашборд ключей, регистрируете токен ltk_..., и встраиваете один POST-запрос в бэкенд своего чат-бота.'
-                          : 'Navigate to the Developer Dashboard, register a ltk_... token, and plug a single POST query into your backend pipelines.'}
-                      </p>
-                    </div>
-                    <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800/60 text-[11px] font-mono text-slate-400/80">
-                      <span className="text-lime-400">headers:</span> <span className="text-slate-300">{"{"} "Authorization": "Bearer ltk_..." {"}"}</span>
-                    </div>
-                  </div>
-
-                  {/* Right Column: End User */}
-                  <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col gap-4 relative">
-                    <div className="absolute top-4 right-4 text-xs font-mono text-emerald-400/70 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">
-                      {lang === 'ru' ? 'Конечный Клиент' : 'End Client Stream'}
-                    </div>
-                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
-                      <Users size={18} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-sm">{lang === 'ru' ? 'Ваши Пользователи (Собеседники в чате)' : 'Your End Users'}</h4>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        {lang === 'ru'
-                          ? 'Собеседник пишет сообщение в вашем чате на своём родном языке. Ваша система незаметно обогащает культурный контекст через LIT API перед отправкой запроса к GPT/Claude.'
-                          : 'Your user types a message in their native language. Your server transparently hydrates the payload with context via LIT before passing it to GPT-4/Claude.'}
-                      </p>
-                    </div>
-                    <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800/60 text-[11px] font-mono text-slate-400/80 flex items-center justify-between">
-                      <span className="text-slate-400">{lang === 'ru' ? 'Пользователь ➔ Ваш Чат ➔ LIT API ➔ LLM' : 'Client ➔ Your Server ➔ LIT API ➔ LLM'}</span>
-                      <span className="text-lime-400 font-semibold text-[10px] bg-lime-500/10 px-2 py-0.5 rounded">✓ {lang === 'ru' ? 'Скрыто от клиента' : 'Transparent to Client'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center mt-6 text-[11px] text-slate-500 italic">
-                  {lang === 'ru' 
-                    ? '*Таким образом, конечным пользователям чат-бота не требуются ключи или сложная настройка — всё работает в фоне под вашим полным контролем.'
-                    : '*End users require zero setups or keys — the entire translation enhancement runs entirely on the background under your full control.'}
-                </div>
-              </div>
-
-              {/* CORE LINGUISTIC TARGETS (BENTO-LIKE MATRIX) */}
-              <div className="flex flex-col gap-8">
-                <div className="text-center max-w-xl mx-auto">
-                  <h2 className="text-2xl font-display font-bold text-white mb-2">
-                    {TRANSLATIONS[lang].matrixTitle}
-                  </h2>
-                  <p className="text-sm text-slate-400 font-sans">
-                    {TRANSLATIONS[lang].matrixSubtitle}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  
-                  {/* 1. Modal Particles */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-lime-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Layers size={18} />
-                    </div>
-                    <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix1Title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      {TRANSLATIONS[lang].matrix1Desc}
-                    </p>
-                  </div>
-
-                  {/* 2. Diminutives */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-lime-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Sparkles size={18} />
-                    </div>
-                    <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix2Title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      {TRANSLATIONS[lang].matrix2Desc}
-                    </p>
-                  </div>
-
-                  {/* 3. Understatement as Default */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-lime-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Activity size={18} />
-                    </div>
-                    <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix3Title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      {TRANSLATIONS[lang].matrix3Desc}
-                    </p>
-                  </div>
-
-                  {/* 4. Hedging */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-lime-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Shield size={18} />
-                    </div>
-                    <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix4Title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      {TRANSLATIONS[lang].matrix4Desc}
-                    </p>
-                  </div>
-
-                  {/* 5. Verb Aspect */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-lime-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Database size={18} />
-                    </div>
-                    <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix5Title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      {TRANSLATIONS[lang].matrix5Desc}
-                    </p>
-                  </div>
-
-                  {/* 6. Prosody & Word Order */}
-                  <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl flex flex-col gap-3 hover:border-lime-500/30 transition-all duration-300">
-                    <div className="p-2.5 bg-lime-500/10 text-lime-400 rounded-xl w-fit">
-                      <Terminal size={18} />
-                    </div>
-                    <h3 className="font-bold text-slate-200">{TRANSLATIONS[lang].matrix6Title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      {TRANSLATIONS[lang].matrix6Desc}
-                    </p>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* PRICING PLANS */}
-              <div className="flex flex-col gap-8 border-t border-slate-900 pt-16">
-                <div className="text-center max-w-xl mx-auto">
-                  <h2 className="text-2xl font-display font-bold text-white mb-2">
-                    {TRANSLATIONS[lang].pricingTitle}
-                  </h2>
-                  <p className="text-sm text-slate-400 font-sans">
-                    {TRANSLATIONS[lang].pricingSubtitle}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto w-full">
-                  
-                  {/* Plan 1: Free */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-850 font-mono">
-                        {TRANSLATIONS[lang].pricingFreeTitle}
-                      </span>
-                      <div className="flex items-baseline gap-1 mt-4">
-                        <span className="text-3xl font-bold font-display text-white">{TRANSLATIONS[lang].pricingFreePrice}</span>
-                        <span className="text-xs text-slate-400 font-medium">{TRANSLATIONS[lang].pricingFreePeriod}</span>
-                      </div>
-                      <p className="text-xs text-slate-400 leading-relaxed mt-2 font-sans">
-                        {TRANSLATIONS[lang].pricingFreeDesc}
-                      </p>
-                      
-                      <ul className="mt-6 flex flex-col gap-3 text-xs text-slate-300">
-                        <li className="flex items-center gap-2">
-                          <Check size={14} className="text-lime-400 shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingFreeBullet1}</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check size={14} className="text-lime-400 shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingFreeBullet2}</span>
-                        </li>
-                        <li className="flex items-center gap-2 text-slate-500 line-through">
-                          <Check size={14} className="shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingFreeBullet3}</span>
-                        </li>
-                        <li className="flex items-center gap-2 text-slate-500 line-through">
-                          <Check size={14} className="shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingFreeBullet4}</span>
-                        </li>
-                      </ul>
-                    </div>
-                    
-                    <button
-                      id="btn-pricing-free"
-                      onClick={() => {
-                        setCurrentTab('dashboard');
-                        setNewKeyTier('free');
-                      }}
-                      className="mt-8 w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 border border-slate-850 text-slate-300 font-semibold rounded-xl text-xs transition-colors duration-200 cursor-pointer"
-                    >
-                      {TRANSLATIONS[lang].pricingFreeBtn}
-                    </button>
-                  </div>
-
-                  {/* Plan 2: Pro */}
-                  <div className="bg-slate-900 border-2 border-lime-500/20 rounded-3xl p-6 flex flex-col justify-between relative shadow-lg shadow-lime-500/5">
-                    <div className="absolute -top-3.5 right-6 px-3 py-1 bg-lime-600 text-white text-[10px] font-bold rounded-full font-mono uppercase tracking-wider">
-                      Most Popular
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-lime-400 bg-lime-500/10 px-2.5 py-1 rounded-lg border border-lime-500/10 font-mono">
-                        {TRANSLATIONS[lang].pricingProTitle}
-                      </span>
-                      <div className="flex items-baseline gap-1 mt-4">
-                        <span className="text-3xl font-bold font-display text-white">{TRANSLATIONS[lang].pricingProPrice}</span>
-                        <span className="text-xs text-slate-400 font-medium">{TRANSLATIONS[lang].pricingProPeriod}</span>
-                      </div>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-2 font-sans">
-                        {TRANSLATIONS[lang].pricingProDesc}
-                      </p>
-                      
-                      <ul className="mt-6 flex flex-col gap-3 text-xs text-slate-300">
-                        <li className="flex items-center gap-2">
-                          <Check size={14} className="text-lime-400 shrink-0" />
-                          <span className="font-bold text-white">{TRANSLATIONS[lang].pricingProBullet1}</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check size={14} className="text-lime-400 shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingProBullet2}</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check size={14} className="text-lime-400 shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingProBullet3}</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Check size={14} className="text-lime-400 shrink-0" />
-                          <span>{TRANSLATIONS[lang].pricingProBullet4}</span>
-                        </li>
-                      </ul>
-                    </div>
-                    
-                    <button
-                      id="btn-pricing-pro"
-                      onClick={() => {
-                        setCurrentTab('dashboard');
-                        setNewKeyTier('paid');
-                      }}
-                      className="mt-8 w-full py-2.5 px-4 bg-lime-600 hover:bg-lime-700 text-white font-bold rounded-xl text-xs transition-all duration-200 shadow-md shadow-lime-500/10 cursor-pointer"
-                    >
-                      {TRANSLATIONS[lang].pricingProBtn}
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-
             </motion.div>
           )}
 
@@ -1199,12 +1095,15 @@ export default function App() {
               transition={{ duration: 0.25 }}
               className="flex flex-col gap-6"
             >
-              <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-display font-bold text-white flex items-center gap-2">
-                  <Play size={18} className="text-lime-400" />
+              <div className="border-b border-white/10 pb-4">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-sky-300 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/20">
+                  LIVE WORKSHOP & TOKEN SAVER
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-sans font-bold text-white flex items-center gap-2 mt-2">
+                  <Sparkles size={22} className="text-sky-400" />
                   {TRANSLATIONS[lang].demoTitle}
                 </h2>
-                <p className="text-sm text-slate-400 leading-relaxed font-sans max-w-2xl">
+                <p className="text-sm text-slate-400 font-normal max-w-2xl mt-1">
                   {TRANSLATIONS[lang].demoSubtitle}
                 </p>
               </div>
@@ -1221,203 +1120,13 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.25 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
             >
-              {/* Sidebar Index */}
-              <div className="lg:col-span-1 flex flex-col gap-6">
-                <div className="bg-slate-900 border border-slate-850 p-5 rounded-2xl sticky top-24">
-                  <h3 className="font-display font-bold text-slate-200 mb-4 flex items-center gap-2">
-                    <BookOpen size={16} className="text-lime-400" />
-                    {lang === 'ru' ? "Содержание" : "Table of Contents"}
-                  </h3>
-                  
-                  <ul className="flex flex-col gap-2 text-xs">
-                    <li>
-                      <a href="#doc-overview" className="block py-2 px-3 bg-slate-950 rounded-lg text-lime-400 font-medium">
-                        {lang === 'ru' ? "1. Обзор архитектуры" : "1. Architecture Overview"}
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#doc-endpoint-analyze" className="block py-2 px-3 hover:bg-slate-950 rounded-lg text-slate-300 transition-colors">
-                        2. POST /api/analyze
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#doc-endpoint-enhance" className="block py-2 px-3 hover:bg-slate-950 rounded-lg text-slate-300 transition-colors">
-                        3. POST /api/enhance
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#doc-limits" className="block py-2 px-3 hover:bg-slate-950 rounded-lg text-slate-300 transition-colors">
-                        {lang === 'ru' ? "4. Лимиты и Коды ошибок" : "4. Limits & Error Codes"}
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Documentation Body */}
-              <div className="lg:col-span-2 flex flex-col gap-10 font-sans leading-relaxed text-sm text-slate-300">
-                
-                {/* 1. Overview */}
-                <section id="doc-overview" className="flex flex-col gap-3">
-                  <h2 className="text-xl font-display font-bold text-white border-b border-slate-900 pb-2">
-                    {lang === 'ru' ? "1. Обзор архитектуры" : "1. Architecture Overview"}
-                  </h2>
-                  <p>
-                    {lang === 'ru' 
-                      ? "LostInTranslation — это тонкий middleware-слой, который встраивается перед вызовами крупных LLM (Claude, GPT-4, Gemini) в вашем коде. Он предназначен для того, чтобы улавливать скрытые намерения говорящих на разных языках, которые стираются при обычном дословном машинном переводе."
-                      : "LostInTranslation is a lightweight middleware layer that is injected before calls to large LLMs (Claude, GPT-4, Gemini) in your codebase. It is designed to capture the hidden intent of speakers across multiple languages, which is often completely erased by typical literal machine translations."}
-                  </p>
-                  <p>
-                    {lang === 'ru'
-                      ? "Вы передаете оригинальный текст в наш API, получаете структурированный лингвистический контекст или полностью готовый переписанный промт, который затем отправляется в вашу целевую нейросеть."
-                      : "You pass the original text to our API, obtain a structured linguistic context or a fully ready-to-use enriched prompt, which is then dispatched directly to your target neural network."}
-                  </p>
-                </section>
-
-                {/* 2. Endpoint: analyze */}
-                <section id="doc-endpoint-analyze" className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 bg-lime-500/10 text-lime-400 text-xs font-mono font-bold rounded">
-                      POST
-                    </span>
-                    <h2 className="text-xl font-display font-bold text-white">
-                      /api/analyze
-                    </h2>
-                  </div>
-                  <p>
-                    {lang === 'ru'
-                      ? "Используется для парсинга текста и выделения списка потерь культурного смысла. Идеально подходит для систем речевой аналитики, анализа отзывов, локализации и фильтрации токсичности."
-                      : "Used to parse text and extract a structured list of cultural meaning losses. Perfectly suited for speech analytics systems, customer feedback monitoring, translation localization, and advanced content safety layers."}
-                  </p>
-
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ru' ? "Заголовки (Headers)" : "Request Headers"}
-                    </span>
-                    <pre className="text-xs font-mono text-slate-300 bg-slate-950 p-2 rounded">
-                      Content-Type: application/json{"\n"}
-                      X-LIT-API-KEY: your_api_key_here
-                    </pre>
-                  </div>
-
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ru' ? "Тело запроса (Request JSON)" : "Request Body (JSON)"}
-                    </span>
-                    <pre className="text-xs font-mono text-lime-300 bg-slate-950 p-2 rounded">
-{`{
-  "text": "行けたら行く",
-  "target_language": "en"
-}`}
-                    </pre>
-                  </div>
-
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ru' ? "Ответ (Response JSON)" : "Response Payload (JSON)"}
-                    </span>
-                    <pre className="text-xs font-mono text-slate-400 bg-slate-950 p-2 rounded overflow-x-auto max-h-56">
-{JSON.stringify({
-  original: lang === 'ru' ? "Да ну и ладно, домой пойду" : "行けたら行く",
-  literal_translation: lang === 'ru' ? "Well okay then, I'll go home" : "I'll go if I can go",
-  found: true,
-  items: [
-    {
-      fragment: lang === 'ru' ? "Да ну и ладно" : "行けたら行く",
-      short: lang === 'ru' ? "Горькое смирение, замаскированное под безразличие" : "Polite refusal disguised as conditional plan",
-      explanation: lang === 'ru' 
-        ? "Комбинация частиц 'ну и' сдвигает фокус в сторону вынужденного компромисса, скрытой обиды или разочарования, когда говорящий делает вид, что ему всё равно..."
-        : "In colloquial Japanese, this phrase is widely used as a polite social hedge meaning 'I will probably not attend', while literal translations falsely convey actual intent of visiting.",
-      alternative: lang === 'ru' ? "Fine, whatever / I guess I have no choice anyway" : "I won't be able to make it"
-    }
-  ]
-}, null, 2)}
-                    </pre>
-                  </div>
-                </section>
-
-                {/* 3. Endpoint: enhance */}
-                <section id="doc-endpoint-enhance" className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 bg-lime-500/10 text-lime-400 text-xs font-mono font-bold rounded">
-                      POST
-                    </span>
-                    <h2 className="text-xl font-display font-bold text-white">
-                      /api/enhance
-                    </h2>
-                  </div>
-                  <p className="text-slate-300">
-                    {lang === 'ru'
-                      ? "Основной эндпоинт платформы. Принимает вашу исходную ИИ-инструкцию (промт) и русский текст. Возвращает готовый обогащенный промт со специальным размеченным блоком [Cultural context], готовый для немедленной отправки в GPT-4 или Claude."
-                      : "The primary endpoint of the platform. It accepts your raw system instruction (prompt) and the localized text. It returns a fully context-enriched prompt featuring a dedicated [Cultural context] section, optimized for immediate routing to GPT-4, Claude, or other LLMs."}
-                  </p>
-
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ru' ? "Тело запроса (Request JSON)" : "Request Body (JSON)"}
-                    </span>
-                    <pre className="text-xs font-mono text-lime-300 bg-slate-950 p-2 rounded">
-{`{
-  "prompt": "Summarize the following user feedback",
-  "text": "Ну в принципе неплохо, но могло бы быть и лучше"
-}`}
-                    </pre>
-                  </div>
-
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ru' ? "Ответ (Response JSON)" : "Response Payload (JSON)"}
-                    </span>
-                    <pre className="text-xs font-mono text-slate-400 bg-slate-950 p-2 rounded overflow-x-auto max-h-56">
-{`{
-  "enhanced_prompt": "Summarize the following user feedback.\\n\\n[Cultural context for accurate interpretation: The phrase uses 'ну в принципе' (reluctant, qualified acceptance rather than approval)...]\\n\\nText: Ну в принципе неплохо, но могло бы быть и лучше",
-  "context_added": true,
-  "losses_detected": 3
-}`}
-                    </pre>
-                  </div>
-
-                  {/* Code Examples Component */}
-                  <div className="flex flex-col gap-2 mt-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ru' ? "Примеры интеграции в код:" : "Code Integration Examples:"}
-                    </span>
-                    <CodeExample />
-                  </div>
-                </section>
-
-                {/* 4. Limits */}
-                <section id="doc-limits" className="flex flex-col gap-3">
-                  <h2 className="text-xl font-display font-bold text-white border-b border-slate-900 pb-2">
-                    {lang === 'ru' ? "4. Лимиты и Коды ошибок" : "4. Limits & Error Codes"}
-                  </h2>
-                  <p>
-                    {lang === 'ru'
-                      ? "LostInTranslation использует классические HTTP-коды ответов для обработки ошибок:"
-                      : "LostInTranslation utilizes standard HTTP response status codes to communicate API transaction states:"}
-                  </p>
-                  <ul className="list-disc list-inside flex flex-col gap-1.5 text-xs">
-                    <li>
-                      <strong className="text-slate-200">200 OK</strong> — {lang === 'ru' ? "запрос успешно обработан." : "transaction successfully completed."}
-                    </li>
-                    <li>
-                      <strong className="text-slate-200">400 Bad Request</strong> — {lang === 'ru' ? "отсутствует обязательный параметр или передан неверный тип данных." : "missing required parameters or invalid data payload type."}
-                    </li>
-                    <li>
-                      <strong className="text-slate-200">401 Unauthorized</strong> — {lang === 'ru' ? "передан недействительный, просроченный или отозванный API-ключ." : "provided API key is invalid, expired, or manually revoked."}
-                    </li>
-                    <li>
-                      <strong className="text-slate-200">403 Forbidden</strong> — {lang === 'ru' ? "эндпоинт защищен (например, вызов /api/enhance без передачи API-ключа)." : "endpoint is protected (e.g. attempting to call /api/enhance without passing a valid API key header)."}
-                    </li>
-                    <li>
-                      <strong className="text-slate-200">429 Too Many Requests</strong> — {lang === 'ru' ? "превышен лимит тарифа в суточном скользящем окне 24 часов." : "subscription quota limit exceeded within the 24-hour sliding window."}
-                    </li>
-                  </ul>
-                </section>
-
-              </div>
+              <React.Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-sm"><RefreshCw className="animate-spin mr-2" size={16} /> Loading documentation...</div>}>
+                <ApiDocs
+                  lang={lang}
+                  onNavigateToDashboard={() => switchTab('dashboard')}
+                />
+              </React.Suspense>
             </motion.div>
           )}
 
@@ -1432,15 +1141,12 @@ export default function App() {
               className="flex flex-col gap-8"
             >
               {!user ? (
-                <div className="max-w-md mx-auto w-full my-8 bg-slate-900 border border-slate-800/80 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-                  {/* Decorative background glow */}
-                  <div className="absolute top-0 left-1/4 w-1/2 h-1 bg-gradient-to-r from-lime-500 to-emerald-500 rounded-full filter blur-[1px]"></div>
-                  
+                <div className="frosted-card max-w-[480px] mx-auto w-full my-8 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
                   <div className="text-center mb-6">
-                    <div className="inline-flex p-3 bg-lime-500/10 text-lime-400 rounded-xl mb-3 border border-lime-500/20">
+                    <div className="inline-flex p-3 bg-sky-400/10 text-sky-400 rounded-xl mb-3 border border-sky-400/20">
                       <Users size={22} className="animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-display font-bold text-white">
+                    <h3 className="text-xl font-sans font-bold text-white">
                       {lang === 'ru' ? "Авторизация разработчика" : "Developer Authorization"}
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 font-sans">
@@ -1451,32 +1157,115 @@ export default function App() {
                   </div>
 
                   {/* Tabs for Login / Register */}
-                  <div className="flex border-b border-slate-800 mb-6 p-1 bg-slate-950 rounded-xl">
+                  <div className="flex border border-white/10 mb-5 p-1 bg-black/40 rounded-xl">
                     <button
                       onClick={() => { setAuthTab('login'); setAuthError(null); }}
-                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                      className={`flex-1 py-2 text-xs font-sans rounded-lg transition-all cursor-pointer ${
                         authTab === 'login' 
-                          ? 'bg-slate-900 text-white border border-slate-800/60 shadow-sm font-bold' 
-                          : 'text-slate-500 hover:text-slate-300'
+                          ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm font-semibold' 
+                          : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       {lang === 'ru' ? "Вход" : "Sign In"}
                     </button>
                     <button
                       onClick={() => { setAuthTab('register'); setAuthError(null); }}
-                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                      className={`flex-1 py-2 text-xs font-sans rounded-lg transition-all cursor-pointer ${
                         authTab === 'register' 
-                          ? 'bg-slate-900 text-white border border-slate-800/60 shadow-sm font-bold' 
-                          : 'text-slate-500 hover:text-slate-300'
+                          ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm font-semibold' 
+                          : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       {lang === 'ru' ? "Регистрация" : "Sign Up"}
                     </button>
                   </div>
 
+                  {/* Quick OAuth Providers Grid (Official Branded Styles) */}
+                  <div className="mb-5">
+                    <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+                      <span>{lang === 'ru' ? "Вход в 1 клик:" : "1-Click Quick Sign In:"}</span>
+                      <span className="text-[10px] text-emerald-400 font-mono">● {lang === 'ru' ? "Мгновенно" : "Instant"}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* 1. GitHub Button */}
+                      <button
+                        id="oauth-btn-github"
+                        type="button"
+                        disabled={authLoading}
+                        onClick={() => handleOAuthLogin('github')}
+                        className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 font-semibold text-xs transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                        title={lang === 'ru' ? "Войти через GitHub" : "Sign In with GitHub"}
+                      >
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                        </svg>
+                        <span className="truncate">GitHub</span>
+                      </button>
+
+                      {/* 2. Яндекс ID */}
+                      <button
+                        id="oauth-btn-yandex"
+                        type="button"
+                        disabled={authLoading}
+                        onClick={() => handleOAuthLogin('yandex')}
+                        className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 font-semibold text-xs transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                        title={lang === 'ru' ? "Войти с Яндекс ID" : "Sign In with Yandex ID"}
+                      >
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" className="w-4 h-4 shrink-0">
+                          <circle cx="12" cy="12" r="10" fill="#FC3F1D" />
+                          <path d="M14.6 17.5h-1.9v-6.3h-1.2c-1.3 0-2 .6-2 1.6 0 .9.5 1.5 1.4 2.2l.9.7-2.6 3.8H7l2.8-4C8.9 14.8 8.1 13.9 8.1 12.6c0-1.9 1.4-3.1 3.7-3.1h2.8v8z" fill="#FFFFFF" />
+                        </svg>
+                        <span className="truncate">Яндекс ID</span>
+                      </button>
+
+                      {/* 3. Telegram */}
+                      <button
+                        id="oauth-btn-telegram"
+                        type="button"
+                        disabled={authLoading}
+                        onClick={() => handleOAuthLogin('telegram')}
+                        className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 font-semibold text-xs transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                        title={lang === 'ru' ? "Войти через Telegram" : "Sign In with Telegram"}
+                      >
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0 text-[#24A1DE]">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+                        </svg>
+                        <span className="truncate">Telegram</span>
+                      </button>
+
+                      {/* 4. Google */}
+                      <button
+                        id="oauth-btn-google"
+                        type="button"
+                        disabled={authLoading}
+                        onClick={() => handleOAuthLogin('google')}
+                        className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/10 font-semibold text-xs transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                        title={lang === 'ru' ? "Войти через Google" : "Sign In with Google"}
+                      >
+                        <svg width="17" height="17" viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                        </svg>
+                        <span className="truncate">Google</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Or Divider */}
+                  <div className="relative my-4 flex items-center justify-center">
+                    <div className="border-t border-white/10 w-full" />
+                    <span className="bg-black/40 px-3 text-[10px] font-mono text-slate-400 uppercase tracking-wider relative shrink-0 rounded-full border border-white/5">
+                      {lang === 'ru' ? "или через Email" : "or with Email"}
+                    </span>
+                    <div className="border-t border-white/10 w-full" />
+                  </div>
+
                   {/* Auth Error Display */}
                   {authError && (
-                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 flex items-center gap-2 font-sans">
+                    <div className="mb-4 p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2 font-sans">
                       <AlertTriangle size={14} className="shrink-0" />
                       <span>{authError}</span>
                     </div>
@@ -1495,7 +1284,7 @@ export default function App() {
                         value={authEmail}
                         onChange={(e) => setAuthEmail(e.target.value)}
                         placeholder="developer@example.com"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors duration-200 font-mono"
+                        className="w-full bg-black/40 border border-white/15 focus:border-amber-400/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors duration-200 font-mono"
                       />
                     </div>
 
@@ -1510,7 +1299,7 @@ export default function App() {
                         value={authPassword}
                         onChange={(e) => setAuthPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-700 focus:outline-none transition-colors duration-200 font-mono"
+                        className="w-full bg-black/40 border border-white/15 focus:border-amber-400/50 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors duration-200 font-mono"
                       />
                     </div>
 
@@ -1518,7 +1307,7 @@ export default function App() {
                       id="auth-submit-btn"
                       type="submit"
                       disabled={authLoading}
-                      className="w-full mt-2 py-3 bg-lime-600 hover:bg-lime-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                      className="apple-btn-primary w-full mt-2 py-3 bg-white hover:bg-slate-100 text-black font-sans font-bold text-xs rounded-xl transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
                     >
                       {authLoading ? (
                         <RefreshCw size={13} className="animate-spin" />
@@ -1534,14 +1323,16 @@ export default function App() {
               ) : (
                 <>
                   {/* Page header */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-5">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
                 <div>
-                  <h2 className="text-2xl font-display font-bold text-white flex items-center gap-2">
-                    <Database size={22} className="text-lime-400" />
-                    Панель разработчика & Ключи
+                  <h2 className="text-2xl font-sans font-bold text-white flex items-center gap-2">
+                    <Database size={22} className="text-sky-400" />
+                    {lang === 'ru' ? "Панель разработчика & Ключи" : "Developer Console & Keys"}
                   </h2>
-                  <p className="text-sm text-slate-400 leading-none mt-1">
-                    Управление API-ключами, мониторинг нагрузки, аудит недавних сетевых транзакций.
+                  <p className="text-sm text-slate-400 leading-none mt-1 font-sans">
+                    {lang === 'ru' 
+                      ? "Управление API-ключами, мониторинг нагрузки, аудит недавних сетевых транзакций." 
+                      : "Manage API keys, monitor usage quotas, and audit real-time gateway logs."}
                   </p>
                 </div>
                 
@@ -1549,10 +1340,10 @@ export default function App() {
                    id="btn-refresh-stats"
                   onClick={fetchStats}
                   disabled={statsLoading}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 rounded-xl flex items-center gap-2 transition-all disabled:opacity-55 cursor-pointer"
+                  className="px-4 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-sky-400/40 text-xs font-sans font-semibold text-slate-200 rounded-xl flex items-center gap-2 transition-all disabled:opacity-55 cursor-pointer backdrop-blur-xl"
                 >
                   <RefreshCw size={13} className={statsLoading ? 'animate-spin' : ''} />
-                  Обновить статистику
+                  {lang === 'ru' ? "Обновить статистику" : "Refresh Analytics"}
                 </button>
               </div>
 
@@ -1561,28 +1352,28 @@ export default function App() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   
                   {/* Metric 1 */}
-                  <div className="bg-slate-900 border border-slate-880 p-5 rounded-2xl flex flex-col gap-1.5 shadow-md">
+                  <div className="frosted-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-5 rounded-2xl flex flex-col gap-1.5 shadow-xl">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                       {TRANSLATIONS[lang].dashStatsTotalLabel}
                     </span>
-                    <div className="text-3xl font-bold text-white font-display">
+                    <div className="text-3xl font-bold text-white font-sans">
                       {stats.totalRequests}
                     </div>
-                    <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
-                      <Activity size={12} className="text-lime-400" />
+                    <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-1 font-sans">
+                      <Activity size={12} className="text-emerald-400" />
                       {TRANSLATIONS[lang].dashStatsSyncRealtime}
                     </div>
                   </div>
 
                   {/* Metric 2 */}
-                  <div className="bg-slate-900 border border-slate-880 p-5 rounded-2xl flex flex-col gap-1.5 shadow-md">
+                  <div className="frosted-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-5 rounded-2xl flex flex-col gap-1.5 shadow-xl">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                       {TRANSLATIONS[lang].dashStatsLossesPrevented}
                     </span>
-                    <div className="text-3xl font-bold text-lime-400 font-display">
+                    <div className="text-3xl font-bold text-amber-300 font-sans">
                       {Math.round(stats.totalRequests * stats.lossesAvg)}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1">
+                    <div className="text-[11px] text-slate-400 mt-1 font-sans">
                       {lang === 'ru' 
                         ? `В среднем ${stats.lossesAvg} потери смыслов на запрос`
                         : `In average ${stats.lossesAvg} meaning losses per request`}
@@ -1590,43 +1381,43 @@ export default function App() {
                   </div>
 
                   {/* Metric 3 */}
-                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-1.5 shadow-md">
+                  <div className="frosted-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-5 rounded-2xl flex flex-col gap-1.5 shadow-xl">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                       {TRANSLATIONS[lang].dashStatsSuccessRate}
                     </span>
-                    <div className="text-3xl font-bold text-lime-400 font-display">
+                    <div className="text-3xl font-bold text-emerald-400 font-sans">
                       {stats.successRate}%
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1">
+                    <div className="text-[11px] text-slate-400 mt-1 font-sans">
                       {TRANSLATIONS[lang].dashStatsUptimeLabel}
                     </div>
                   </div>
 
                   {/* Metric 4 */}
-                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-1.5 shadow-md">
+                  <div className="frosted-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-5 rounded-2xl flex flex-col gap-1.5 shadow-xl">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                       {TRANSLATIONS[lang].dashStatsActiveKeys}
                     </span>
-                    <div className="text-3xl font-bold text-white font-display">
+                    <div className="text-3xl font-bold text-white font-sans">
                       {stats.apiKeys.filter(k => k.status === 'active').length}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1">
-                      {TRANSLATIONS[lang].dashStatsRevokedLabel} <span className="font-semibold">{stats.apiKeys.filter(k => k.status === 'revoked').length}</span>
+                    <div className="text-[11px] text-slate-400 mt-1 font-sans">
+                      {TRANSLATIONS[lang].dashStatsRevokedLabel} <span className="font-semibold text-slate-300">{stats.apiKeys.filter(k => k.status === 'revoked').length}</span>
                     </div>
                   </div>
 
                 </div>
               ) : (
-                <div className="h-24 bg-slate-900 border border-slate-800 animate-pulse rounded-2xl" />
+                <div className="h-24 bg-white/[0.03] border border-white/10 animate-pulse rounded-2xl" />
               )}
 
               {/* CORE DASHBOARD GRID: LEFT COLUMN (GENERATE KEY), RIGHT COLUMN (ACTIVE KEYS TABLE) */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 1. Generate API Key form */}
-                <div className="lg:col-span-1 bg-slate-900 border border-slate-880 p-6 rounded-2xl h-fit flex flex-col gap-4">
-                  <h3 className="font-display font-bold text-slate-200 text-base flex items-center gap-1.5">
-                    <Plus size={18} className="text-lime-400" />
+                <div className="frosted-card lg:col-span-1 bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-6 rounded-2xl h-fit flex flex-col gap-4 shadow-xl">
+                  <h3 className="font-sans font-bold text-white text-base flex items-center gap-1.5">
+                    <Plus size={18} className="text-sky-400" />
                     {lang === 'ru' ? "Выпустить новый API-ключ" : "Issue New API Key"}
                   </h3>
 
@@ -1642,7 +1433,7 @@ export default function App() {
                         value={newKeyName}
                         onChange={(e) => setNewKeyName(e.target.value)}
                         placeholder={lang === 'ru' ? "Например: Production Telegram Bot" : "E.g. Production Telegram Bot"}
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-lime-500/60 rounded-xl px-4 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors duration-200"
+                        className="w-full bg-black/40 border border-white/15 focus:border-sky-400/50 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors duration-200 font-mono"
                       />
                     </div>
 
@@ -1655,10 +1446,10 @@ export default function App() {
                           id="btn-tier-free"
                           type="button"
                           onClick={() => setNewKeyTier('free')}
-                          className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
+                          className={`py-2 px-3 text-xs font-sans font-semibold rounded-xl border transition-all cursor-pointer ${
                             newKeyTier === 'free'
-                              ? 'bg-slate-800 text-lime-400 border-lime-500/20'
-                              : 'bg-slate-950 text-slate-500 border-slate-850 hover:text-slate-300'
+                              ? 'bg-sky-400/20 text-sky-300 border-sky-400/40 shadow-sm font-bold'
+                              : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white'
                           }`}
                         >
                           Sandbox Free
@@ -1667,10 +1458,10 @@ export default function App() {
                           id="btn-tier-paid"
                           type="button"
                           onClick={() => setNewKeyTier('paid')}
-                          className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
+                          className={`py-2 px-3 text-xs font-sans font-semibold rounded-xl border transition-all cursor-pointer ${
                             newKeyTier === 'paid'
-                              ? 'bg-slate-800 text-lime-400 border-lime-500/20 shadow-md shadow-lime-500/20'
-                              : 'bg-slate-950 text-slate-500 border-slate-850 hover:text-slate-300'
+                              ? 'bg-amber-300/20 text-amber-200 border-amber-300/40 shadow-sm font-bold'
+                              : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white'
                           }`}
                         >
                           Production Pro ($5)
@@ -1682,7 +1473,7 @@ export default function App() {
                       id="btn-submit-key-generation"
                       type="submit"
                       disabled={keyGenerationLoading || !newKeyName.trim()}
-                      className="w-full py-2.5 bg-lime-600 hover:bg-lime-700 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-45 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="apple-btn-primary w-full py-2.5 bg-white hover:bg-slate-100 text-black font-sans font-bold text-xs rounded-xl transition-all disabled:opacity-45 shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {keyGenerationLoading ? (
                         <RefreshCw size={12} className="animate-spin" />
@@ -1700,27 +1491,27 @@ export default function App() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-lime-500/10 border border-lime-500/25 p-4 rounded-xl flex flex-col gap-2 mt-2"
+                        className="bg-black/40 border border-amber-400/40 p-4 rounded-xl flex flex-col gap-2 mt-2"
                       >
-                        <div className="flex items-center gap-1.5 text-xs text-lime-400 font-bold">
-                          <Check size={14} /> {lang === 'ru' ? "Токен успешно сгенерирован!" : "Token successfully generated!"}
+                        <div className="flex items-center gap-1.5 text-xs text-amber-300 font-sans font-bold">
+                          <Check size={14} className="text-emerald-400" /> {lang === 'ru' ? "Токен успешно сгенерирован!" : "Token successfully generated!"}
                         </div>
                         <p className="text-[10px] text-slate-400 leading-tight font-sans">
                           {lang === 'ru' 
                             ? "Скопируйте его прямо сейчас. Из соображений безопасности вы не сможете просмотреть его снова после перезагрузки."
                             : "Copy it right now. For security reasons, you will not be able to view it again after reloading."}
                         </p>
-                        <div className="flex items-center bg-slate-950 rounded-lg p-2 border border-slate-800 justify-between gap-2 mt-1">
-                          <span className="font-mono text-xs text-lime-300 font-bold break-all select-all">
+                        <div className="flex items-center bg-black/60 rounded-lg p-2 border border-white/10 justify-between gap-2 mt-1">
+                          <span className="font-mono text-xs text-amber-300 font-bold break-all select-all">
                             {generatedKeyResult}
                           </span>
                           <button
                             id="btn-copy-new-key"
                             onClick={() => handleCopyKey(generatedKeyResult, 'new_key')}
-                            className="p-1 hover:bg-slate-900 rounded text-slate-400 hover:text-white shrink-0"
+                            className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-white shrink-0 cursor-pointer"
                           >
                             {copiedKeyId === 'new_key' ? (
-                              <Check size={14} className="text-lime-400" />
+                              <Check size={14} className="text-emerald-400" />
                             ) : (
                               <Copy size={14} />
                             )}
@@ -1729,7 +1520,7 @@ export default function App() {
                         <button
                           id="btn-close-new-key-alert"
                           onClick={() => setGeneratedKeyResult(null)}
-                          className="text-[10px] font-semibold text-slate-500 hover:text-slate-300 uppercase tracking-wider text-right mt-1"
+                          className="text-[10px] font-semibold text-slate-400 hover:text-slate-200 uppercase tracking-wider text-right mt-1 cursor-pointer"
                         >
                           {lang === 'ru' ? "Закрыть уведомление" : "Dismiss alert"}
                         </button>
@@ -1739,9 +1530,9 @@ export default function App() {
                 </div>
 
                 {/* 2. List of active/revoked keys */}
-                <div className="lg:col-span-2 bg-slate-900 border border-slate-880 p-6 rounded-2xl flex flex-col gap-4">
-                  <h3 className="font-display font-bold text-slate-200 text-base flex items-center gap-1.5">
-                    <Settings size={18} className="text-lime-400" />
+                <div className="frosted-card lg:col-span-2 bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                  <h3 className="font-sans font-bold text-white text-base flex items-center gap-1.5">
+                    <Settings size={18} className="text-sky-400" />
                     {lang === 'ru' ? "Список ваших API-ключей" : "Your API Access Tokens"}
                   </h3>
 
@@ -1749,7 +1540,7 @@ export default function App() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead>
-                          <tr className="border-b border-slate-800 text-slate-500 font-semibold font-mono text-[10px]">
+                          <tr className="border-b border-white/10 text-slate-400 font-semibold font-mono text-[10px]">
                             <th className="pb-3">{lang === 'ru' ? "ОПИСАНИЕ / ИМЯ КЛЮЧА" : "DESCRIPTION / KEY NAME"}</th>
                             <th className="pb-3">{lang === 'ru' ? "API ТОКЕН" : "API TOKEN"}</th>
                             <th className="pb-3">{lang === 'ru' ? "ТАРИФ" : "TIER"}</th>
@@ -1757,26 +1548,26 @@ export default function App() {
                             <th className="pb-3 text-right">{lang === 'ru' ? "УПРАВЛЕНИЕ" : "ACTIONS"}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/40">
+                        <tbody className="divide-y divide-white/5 font-sans">
                           {stats.apiKeys.map((k) => (
-                            <tr key={k.id} className="group">
+                            <tr key={k.id} className="group hover:bg-white/[0.02]">
                               <td className="py-3.5 pr-2 font-medium text-slate-200">
-                                <div className="font-bold">{k.name}</div>
-                                <div className="text-[10px] text-slate-500 mt-0.5">
+                                <div className="font-sans font-bold text-white">{k.name}</div>
+                                <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
                                   {lang === 'ru' ? "Создан: " : "Created: "}{new Date(k.createdAt).toLocaleDateString()}
                                 </div>
                               </td>
                               <td className="py-3.5 font-mono text-[11px] text-slate-400">
-                                <div className="flex items-center gap-1.5 bg-slate-950/40 px-2 py-1 rounded border border-slate-850 w-fit">
-                                  <span>{k.key.substring(0, 10)}...{k.key.substring(k.key.length - 4)}</span>
+                                <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/10 w-fit">
+                                  <span className="text-amber-300">{k.key.substring(0, 10)}...{k.key.substring(k.key.length - 4)}</span>
                                   <button
                                     id={`btn-copy-key-${k.id}`}
                                     onClick={() => handleCopyKey(k.key, k.id)}
-                                    className="text-slate-500 hover:text-slate-300 transition-colors"
+                                    className="text-slate-400 hover:text-white transition-colors cursor-pointer"
                                     title={lang === 'ru' ? "Скопировать полный ключ" : "Copy full key"}
                                   >
                                     {copiedKeyId === k.id ? (
-                                      <Check size={11} className="text-lime-400" />
+                                      <Check size={11} className="text-emerald-400" />
                                     ) : (
                                       <Copy size={11} />
                                     )}
@@ -1784,10 +1575,10 @@ export default function App() {
                                 </div>
                               </td>
                               <td className="py-3.5 pr-2">
-                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider font-mono ${
+                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider font-mono ${
                                   k.tier === 'paid' 
-                                    ? 'bg-lime-500/10 text-lime-400 border border-lime-500/20' 
-                                    : 'bg-slate-950 text-slate-400 border border-slate-850'
+                                    ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' 
+                                    : 'bg-white/[0.05] text-slate-300 border border-white/10'
                                   }`}>
                                   {k.tier}
                                 </span>
@@ -1801,12 +1592,12 @@ export default function App() {
                                     id={`btn-revoke-key-${k.id}`}
                                     disabled={revokingKey !== null}
                                     onClick={() => handleRevokeKey(k.key)}
-                                    className="text-[10px] font-bold text-rose-400/80 hover:text-rose-400 px-2 py-1 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/10 rounded-lg transition-all focus:outline-none flex items-center gap-1 ml-auto"
+                                    className="text-[10px] font-bold text-rose-400 hover:text-rose-200 px-2 py-1 hover:bg-rose-500/20 border border-transparent hover:border-rose-500/30 rounded-lg transition-all focus:outline-none flex items-center gap-1 ml-auto cursor-pointer"
                                   >
                                     <Trash2 size={11} /> {lang === 'ru' ? "Отозвать" : "Revoke"}
                                   </button>
                                 ) : (
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-950 px-2 py-1 rounded border border-slate-850">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white/[0.05] px-2 py-1 rounded-lg border border-white/10">
                                     {lang === 'ru' ? "Отозван" : "Revoked"}
                                   </span>
                                 )}
@@ -1817,7 +1608,7 @@ export default function App() {
                       </table>
                     </div>
                   ) : (
-                    <div className="py-8 text-center text-slate-500 text-xs">
+                    <div className="py-8 text-center text-slate-400 text-xs font-sans">
                       {lang === 'ru' ? "Ключи отсутствуют. Сгенерируйте токен слева." : "No keys generated yet. Use the form on the left."}
                     </div>
                   )}
@@ -1827,16 +1618,16 @@ export default function App() {
 
               {/* LIVE NETWORK API LOGS AUDIT TRAIL */}
               {stats && stats.recentLogs.length > 0 && (
-                <div className="bg-slate-900 border border-slate-880 p-6 rounded-2xl flex flex-col gap-4 shadow-lg">
-                  <h3 className="font-display font-bold text-slate-200 text-base flex items-center gap-1.5">
-                    <Activity size={18} className="text-lime-400 animate-pulse" />
+                <div className="frosted-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                  <h3 className="font-sans font-bold text-white text-base flex items-center gap-1.5">
+                    <Activity size={18} className="text-emerald-400 animate-pulse" />
                     {lang === 'ru' ? "Логи транзакций API шлюза (Аудит в реальном времени)" : "Gateway Transaction Logs (Real-time Audit)"}
                   </h3>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full text-left text-xs font-sans">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-500 font-semibold font-mono text-[10px]">
+                        <tr className="border-b border-white/10 text-slate-400 font-semibold font-mono text-[10px]">
                           <th className="pb-3">{lang === 'ru' ? "ЭНДПОИНТ" : "ENDPOINT"}</th>
                           <th className="pb-3">{lang === 'ru' ? "API-ТОКЕН" : "API KEY"}</th>
                           <th className="pb-3">{lang === 'ru' ? "СЕРВЕРНОЕ ЧИСЛО ПОТЕРЬ" : "LOSSES DETECTED"}</th>
@@ -1845,30 +1636,30 @@ export default function App() {
                           <th className="pb-3 text-right">{lang === 'ru' ? "ВРЕМЯ ТРАНЗАКЦИИ" : "TIMESTAMP"}</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/30">
+                      <tbody className="divide-y divide-white/5">
                         {stats.recentLogs.map((log) => (
-                          <tr key={log.id} className="hover:bg-slate-950/20 transition-colors">
+                          <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                             <td className="py-3">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono ${
+                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold font-mono ${
                                 log.endpoint === 'enhance'
-                                  ? 'bg-lime-500/10 text-lime-400 border border-lime-500/10'
-                                  : 'bg-sky-500/10 text-sky-400 border border-sky-500/10'
+                                  ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
+                                  : 'bg-white/[0.05] text-slate-300 border border-white/10'
                               }`}>
                                 POST /api/{log.endpoint}
                               </span>
                             </td>
                             <td className="py-3 font-mono text-[10px] text-slate-400">
                               {log.apiKey === 'free' ? (
-                                <span className="text-slate-500 italic">anonymous (demo-site)</span>
+                                <span className="text-slate-400 italic">anonymous (demo-site)</span>
                               ) : (
                                 <span>{log.apiKey.substring(0, 10)}...</span>
                               )}
                             </td>
                             <td className="py-3">
-                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold ${
                                 log.lossesDetected > 0
-                                  ? 'bg-lime-500/10 text-lime-300'
-                                  : 'bg-slate-950 text-slate-500'
+                                  ? 'bg-amber-400/15 text-amber-300 border border-amber-400/25'
+                                  : 'bg-black/30 text-slate-400'
                               }`}>
                                 {log.lossesDetected} fixed
                               </span>
@@ -1876,10 +1667,10 @@ export default function App() {
                             <td className="py-3 text-slate-400 font-mono text-[10px]">
                               {lang === 'ru' ? `${log.textLength} символов` : `${log.textLength} chars`}
                             </td>
-                            <td className="py-3 text-slate-500 font-mono text-[10px]">
+                            <td className="py-3 text-slate-400 font-mono text-[10px]">
                               {log.ipAddress || 'Unknown'}
                             </td>
-                            <td className="py-3 text-right text-slate-500 text-[10px]">
+                            <td className="py-3 text-right text-slate-400 text-[10px]">
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </td>
                           </tr>
@@ -1895,28 +1686,105 @@ export default function App() {
         </motion.div>
       )}
 
+          {/* TAB 5: INTEGRATIONS */}
+          {currentTab === 'integrations' && (
+            <motion.div
+              key="tab-integrations"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+            >
+              <React.Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-sm"><RefreshCw className="animate-spin mr-2" size={16} /> Loading integrations...</div>}>
+                <Integrations 
+                  lang={lang} 
+                  onNavigateToDemo={() => {
+                    switchTab('demo');
+                  }} 
+                />
+              </React.Suspense>
+            </motion.div>
+          )}
+
+          {/* TAB 6: PRIVACY POLICY */}
+          {currentTab === 'privacy' && (
+            <motion.div
+              key="tab-privacy"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+            >
+              <React.Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-sm"><RefreshCw className="animate-spin mr-2" size={16} /> Loading policy...</div>}>
+                <PrivacyPolicy 
+                  lang={lang} 
+                  onNavigateHome={() => switchTab('home')} 
+                  onOpenSupport={() => {
+                    setIsSupportModalOpen(true);
+                    window.location.hash = 'support';
+                  }} 
+                />
+              </React.Suspense>
+            </motion.div>
+          )}
+
         </AnimatePresence>
       </main>
 
-      {/* FOOTER */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500 font-sans mt-12">
+      {/* ULTRA-TRANSPARENT FROSTED GLASS FOOTER */}
+      <footer className="border-t border-white/[0.08] bg-black/20 backdrop-blur-3xl py-8 text-center text-xs text-slate-400 font-sans mt-16 relative z-10">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 text-center sm:text-left">
-            <span className="font-display font-bold text-slate-400 text-sm sm:text-xs">LostInTranslation API</span>
-            <span className="hidden sm:inline text-slate-750">|</span>
-            <span className="text-slate-500 max-w-xs sm:max-w-none text-[11px] sm:text-xs">
-              {lang === 'ru' ? "Ваш ИИ видит слова. Мы даем ему культурные контексты." : "Your LLM reads local words. We give it cultural meaning."}
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+            <span className="font-bold text-white text-sm sm:text-xs">LostInTranslation</span>
+            <span className="hidden sm:inline text-slate-600">|</span>
+            <span className="text-slate-400 text-xs">
+              {lang === 'ru' ? "Культурный семантический слой для больших языковых моделей." : "Cultural semantic precision gateway for LLMs."}
             </span>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-2 text-[11px] sm:text-xs">
-            <a href="#github" className="hover:text-slate-300 transition-colors">GitHub (AGPL-3.0)</a>
-            <span className="text-slate-800 hidden sm:inline">•</span>
-            <a href="#support" className="hover:text-slate-300 transition-colors">{lang === 'ru' ? "Поддержка разработчиков" : "Developer Support"}</a>
-            <span className="text-slate-800 hidden sm:inline">•</span>
-            <span className="text-slate-600">© 2026 LostInTranslation</span>
+          <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs">
+            <a href="https://github.com/Mohito-s/LostinTranslation" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub (AGPL-3.0)</a>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <button
+              id="footer-btn-privacy"
+              onClick={() => {
+                switchTab('privacy');
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              {lang === 'ru' ? "Политика конфиденциальности" : "Privacy Policy"}
+            </button>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <button
+              id="footer-btn-support"
+              onClick={() => {
+                setIsSupportModalOpen(true);
+                window.location.hash = 'support';
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              {lang === 'ru' ? "Поддержка разработчиков" : "Developer Support"}
+            </button>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="text-slate-500 font-mono text-[11px]">© 2026 LostInTranslation</span>
           </div>
         </div>
       </footer>
+
+      {/* SUPPORT & DIAGNOSTICS MODAL */}
+      <React.Suspense fallback={null}>
+        <SupportModal
+          isOpen={isSupportModalOpen}
+          onClose={() => {
+            setIsSupportModalOpen(false);
+            if (window.location.hash === '#support' || window.location.hash === '#help') {
+              window.history.replaceState(null, '', ' ');
+            }
+          }}
+          lang={lang}
+          onNavigateToDocs={() => switchTab('docs')}
+          onNavigateToDashboard={() => switchTab('dashboard')}
+        />
+      </React.Suspense>
 
     </div>
   );

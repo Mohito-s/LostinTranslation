@@ -1,8 +1,27 @@
 {
   "name": "lost-in-translation",
-  "private": true,
-  "license": "AGPL-3.0",
   "version": "1.0.0",
+  "description": "Linguistic middleware that detects cultural meaning loss in AI translations and enriches prompts via Gemini",
+  "author": "Mohito",
+  "license": "AGPL-3.0",
+  "private": true,
+  "homepage": "https://lostintranslation.dev/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mohito-s/LostinTranslation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Mohito-s/LostinTranslation/issues"
+  },
+  "keywords": [
+    "cultural-nuance",
+    "linguistic-middleware",
+    "translation-qa",
+    "gemini",
+    "prompt-engineering",
+    "token-saver",
+    "openai-proxy"
+  ],
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -12,24 +31,36 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('server.js',{recursive:true,force:true})\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "check": "tsc --noEmit && vitest run",
+    "cap:sync": "cap sync",
+    "cap:add:android": "cap add android",
+    "cap:open": "cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.1.14",
+    "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^5.0.4",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.1.0",
+    "helmet": "^8.3.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "pg": "^8.22.0",
     "pino": "^10.3.1",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "vite": "^6.2.3"
+    "swagger-ui-express": "^5.0.0",
+    "three": "^0.186.1",
+    "vite": "^6.2.3",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -45,6 +76,7 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.10"
   }
 }

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { promisify } from 'util';
 import { Request, Response, NextFunction } from 'express';
 import logger from './logger';
 
@@ -19,24 +20,29 @@ if (!SESSION_SECRET) {
 }
 const JWT_SECRET = SESSION_SECRET || 'lit_insecure_dev_secret_only_for_local_demo';
 
+const pbkdf2Async = promisify(crypto.pbkdf2);
+
 /**
  * Hashes a plaintext password using PBKDF2 with a random salt.
  */
-export function hashPassword(password: string): string {
+export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
+  const hash = (await pbkdf2Async(password, salt, ITERATIONS, KEY_LENGTH, DIGEST)).toString('hex');
   return `${salt}:${hash}`;
 }
 
 /**
  * Verifies a plaintext password against a stored hash string.
  */
-export function verifyPassword(password: string, storedHash: string): boolean {
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
     const [salt, originalHash] = storedHash.split(':');
     if (!salt || !originalHash) return false;
-    const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-    return hash === originalHash;
+    const hash = (await pbkdf2Async(password, salt, ITERATIONS, KEY_LENGTH, DIGEST)).toString('hex');
+    if (hash.length !== originalHash.length) return false;
+    const hashBuf = Buffer.from(hash, 'utf-8');
+    const origBuf = Buffer.from(originalHash, 'utf-8');
+    return crypto.timingSafeEqual(hashBuf, origBuf);
   } catch (err) {
     return false;
   }
@@ -71,7 +77,10 @@ export function verifyToken(token: string): AuthenticatedUser | null {
     const payload = decoded.slice(0, sepIndex);
     const signature = decoded.slice(sepIndex + 1);
     const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
-    if (signature !== expectedSignature) return null;
+    if (signature.length !== expectedSignature.length) return null;
+    const sigBuf = Buffer.from(signature, 'utf-8');
+    const expBuf = Buffer.from(expectedSignature, 'utf-8');
+    if (!crypto.timingSafeEqual(sigBuf, expBuf)) return null;
     
     const [userId, email, expiresAtStr] = payload.split(':');
     const expiresAt = parseInt(expiresAtStr, 10);

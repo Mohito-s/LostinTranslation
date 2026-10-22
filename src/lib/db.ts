@@ -20,7 +20,7 @@ export interface UsageLog {
   id: string;
   userId?: number | string | null;
   apiKey: string; // 'free' or actual key
-  endpoint: 'analyze' | 'enhance' | 'compare';
+  endpoint: 'analyze' | 'enhance' | 'compare' | 'optimize-prompt' | 'chat-completions';
   timestamp: string;
   textLength: number;
   lossesDetected: number;
@@ -52,10 +52,18 @@ if (dbUrl) {
   try {
     pool = new pg.Pool({
       connectionString: dbUrl,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
       ssl: dbUrl.includes('supabase') || dbUrl.includes('neon') || dbUrl.includes('render')
         ? { rejectUnauthorized: false }
         : false,
     });
+    
+    pool.on('error', (err) => {
+      logger.error({ err }, 'Unexpected error on idle PostgreSQL client');
+    });
+
     isPostgres = true;
     logger.info('PostgreSQL/Supabase pool configured. Running on Postgres mode.');
   } catch (err) {
@@ -64,6 +72,14 @@ if (dbUrl) {
   }
 } else {
   logger.info('No DATABASE_URL found. Running on Local File Database mode.');
+}
+
+export async function closeDb(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    pool = null;
+    isPostgres = false;
+  }
 }
 
 // Database bootstrapping on startup/first use
@@ -116,6 +132,12 @@ async function bootstrapDb() {
             ip_address TEXT
           );
         `);
+
+        // Create Indexes for performance
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_usage_logs_user_id ON usage_logs(user_id);`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_usage_logs_api_key ON usage_logs(api_key);`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_usage_logs_timestamp ON usage_logs(timestamp);`);
 
         logger.info('PostgreSQL database bootstrapping completed successfully.');
       } finally {
@@ -204,7 +226,7 @@ export async function getDb(): Promise<DbSchema> {
         id: r.id,
         userId: r.user_id,
         apiKey: r.api_key,
-        endpoint: r.endpoint as 'analyze' | 'enhance' | 'compare',
+        endpoint: r.endpoint as UsageLog['endpoint'],
         timestamp: new Date(r.timestamp).toISOString(),
         textLength: r.text_length,
         lossesDetected: r.losses_detected,
@@ -228,12 +250,91 @@ export async function getDb(): Promise<DbSchema> {
   }
 }
 
-// Write helper for local file database
+export interface RecentLogsStats {
+  count: number;
+  oldestTimestamp?: string;
+}
+
+export async function getRecentLogsStats(filter: {
+  apiKey?: string;
+  ipAddress?: string;
+  since: Date;
+}): Promise<RecentLogsStats> {
+  await bootstrapDb();
+
+  if (isPostgres && pool) {
+    try {
+      if (filter.apiKey) {
+        const res = await pool.query(
+          'SELECT COUNT(*)::int AS count, MIN(timestamp) AS oldest FROM usage_logs WHERE api_key = $1 AND timestamp > $2',
+          [filter.apiKey, filter.since.toISOString()]
+        );
+        return {
+          count: res.rows[0]?.count || 0,
+          oldestTimestamp: res.rows[0]?.oldest ? new Date(res.rows[0].oldest).toISOString() : undefined,
+        };
+      } else if (filter.ipAddress) {
+        const res = await pool.query(
+          `SELECT COUNT(*)::int AS count, MIN(timestamp) AS oldest FROM usage_logs 
+           WHERE (api_key IS NULL OR api_key = 'free') AND ip_address = $1 AND timestamp > $2`,
+          [filter.ipAddress, filter.since.toISOString()]
+        );
+        return {
+          count: res.rows[0]?.count || 0,
+          oldestTimestamp: res.rows[0]?.oldest ? new Date(res.rows[0].oldest).toISOString() : undefined,
+        };
+      }
+    } catch (err) {
+      logger.error({ err }, 'Error querying recent log stats from PostgreSQL:');
+    }
+  }
+
+  // Fallback to local
+  const db = await getDb();
+  if (filter.apiKey) {
+    const keyLogs = db.usageLogs.filter(
+      l => l.apiKey === filter.apiKey && new Date(l.timestamp) > filter.since
+    );
+    return {
+      count: keyLogs.length,
+      oldestTimestamp: keyLogs.length > 0 ? keyLogs[0].timestamp : undefined,
+    };
+  } else if (filter.ipAddress) {
+    const anonLogs = db.usageLogs.filter(
+      l => (!l.apiKey || l.apiKey === 'free') && l.ipAddress === filter.ipAddress && new Date(l.timestamp) > filter.since
+    );
+    return {
+      count: anonLogs.length,
+      oldestTimestamp: anonLogs.length > 0 ? anonLogs[0].timestamp : undefined,
+    };
+  }
+
+  return { count: 0 };
+}
+
+// Write helper for local file database (Atomic write)
 function saveLocalDb(data: DbSchema): void {
   try {
-    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    const tempPath = `${LOCAL_DB_PATH}.tmp.${crypto.randomBytes(4).toString('hex')}`;
+    fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempPath, LOCAL_DB_PATH);
   } catch (err) {
     logger.error({ err: err }, 'Failed to save local database:');
+  }
+}
+
+// Concurrency lock for local DB operations
+let localDbLock = Promise.resolve();
+async function withLocalDbLock<T>(fn: () => Promise<T>): Promise<T> {
+  const currentLock = localDbLock;
+  let resolveLock!: () => void;
+  localDbLock = new Promise(resolve => { resolveLock = resolve; });
+  
+  await currentLock;
+  try {
+    return await fn();
+  } finally {
+    resolveLock();
   }
 }
 
@@ -265,23 +366,25 @@ export async function createUser(email: string, passwordHash: string): Promise<U
   }
 
   // Local Mode
-  const db = await getDb();
-  const existing = db.users.find(u => u.email === emailLower);
-  if (existing) {
-    throw new Error('User already exists');
-  }
+  return withLocalDbLock(async () => {
+    const db = await getDb();
+    const existing = db.users.find(u => u.email === emailLower);
+    if (existing) {
+      throw new Error('User already exists');
+    }
 
-  const id = db.users.length + 1;
-  const newUser: User = {
-    id,
-    email: emailLower,
-    passwordHash,
-    createdAt: new Date().toISOString()
-  };
+    const id = db.users.length + 1;
+    const newUser: User = {
+      id,
+      email: emailLower,
+      passwordHash,
+      createdAt: new Date().toISOString()
+    };
 
-  db.users.push(newUser);
-  saveLocalDb(db);
-  return newUser;
+    db.users.push(newUser);
+    saveLocalDb(db);
+    return newUser;
+  });
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
@@ -373,10 +476,12 @@ export async function generateApiKey(name: string, tier: 'free' | 'paid', userId
   }
 
   // Local Mode
-  const db = await getDb();
-  db.apiKeys.push(newKey);
-  saveLocalDb(db);
-  return newKey;
+  return withLocalDbLock(async () => {
+    const db = await getDb();
+    db.apiKeys.push(newKey);
+    saveLocalDb(db);
+    return newKey;
+  });
 }
 
 export async function revokeApiKey(keyString: string, userId: number | string): Promise<boolean> {
@@ -396,17 +501,22 @@ export async function revokeApiKey(keyString: string, userId: number | string): 
   }
 
   // Local Mode
-  const db = await getDb();
-  const index = db.apiKeys.findIndex(k => k.key === keyString && String(k.userId) === String(userId));
-  if (index !== -1) {
-    db.apiKeys[index].status = 'revoked';
-    saveLocalDb(db);
-    return true;
-  }
-  return false;
+  return withLocalDbLock(async () => {
+    const db = await getDb();
+    const index = db.apiKeys.findIndex(k => k.key === keyString && String(k.userId) === String(userId));
+    if (index !== -1) {
+      db.apiKeys[index].status = 'revoked';
+      saveLocalDb(db);
+      return true;
+    }
+    return false;
+  });
 }
 
 export async function validateApiKey(keyString: string): Promise<ApiKey | null> {
+  if (!keyString || typeof keyString !== 'string' || keyString.length > 100) {
+    return null;
+  }
   await bootstrapDb();
 
   if (isPostgres && pool) {
@@ -509,24 +619,26 @@ export async function addUsageLog(log: Omit<UsageLog, 'id' | 'timestamp'>): Prom
   }
 
   // Local Mode
-  const db = await getDb();
-  const newLog: UsageLog = {
-    ...log,
-    id,
-    userId: resolvedUserId,
-    timestamp
-  };
-  db.usageLogs.push(newLog);
+  await withLocalDbLock(async () => {
+    const db = await getDb();
+    const newLog: UsageLog = {
+      ...log,
+      id,
+      userId: resolvedUserId,
+      timestamp
+    };
+    db.usageLogs.push(newLog);
 
-  // Increment usage count locally
-  if (log.apiKey && log.apiKey !== 'free') {
-    const kIdx = db.apiKeys.findIndex(k => k.key === log.apiKey);
-    if (kIdx !== -1) {
-      db.apiKeys[kIdx].usageCount = (db.apiKeys[kIdx].usageCount || 0) + 1;
+    // Increment usage count locally
+    if (log.apiKey && log.apiKey !== 'free') {
+      const kIdx = db.apiKeys.findIndex(k => k.key === log.apiKey);
+      if (kIdx !== -1) {
+        db.apiKeys[kIdx].usageCount = (db.apiKeys[kIdx].usageCount || 0) + 1;
+      }
     }
-  }
 
-  saveLocalDb(db);
+    saveLocalDb(db);
+  });
 }
 
 export async function getUserLogs(userId: number | string): Promise<UsageLog[]> {
@@ -542,7 +654,7 @@ export async function getUserLogs(userId: number | string): Promise<UsageLog[]> 
         id: row.id,
         userId: row.user_id,
         apiKey: row.api_key,
-        endpoint: row.endpoint as 'analyze' | 'enhance' | 'compare',
+        endpoint: row.endpoint as UsageLog['endpoint'],
         timestamp: new Date(row.timestamp).toISOString(),
         textLength: row.text_length,
         lossesDetected: row.losses_detected,

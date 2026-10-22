@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import { Copy, Check, Terminal, FileCode, Cpu } from 'lucide-react';
 
 interface CodeExampleProps {
@@ -11,14 +10,14 @@ export default function CodeExample({ apiKey = 'your_api_key' }: CodeExampleProp
   const [copied, setCopied] = useState(false);
 
   const SNIPPETS = {
-    curl: `curl -X POST "${window.location.origin}/api/enhance" \\
+    curl: `curl -X POST "${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/api/enhance" \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: ${apiKey}" \\
   -d '{
     "prompt": "Translate the user feedback and extract emotion",
     "text": "行けたら行く"
   }'`,
-    javascript: `const response = await fetch('${window.location.origin}/api/enhance', {
+    javascript: `const response = await fetch('${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/api/enhance', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -36,7 +35,7 @@ console.log(data.enhanced_prompt);
 `,
     python: `import requests
 
-url = "${window.location.origin}/api/enhance"
+url = "${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/api/enhance"
 headers = {
     "Content-Type": "application/json",
     "x-api-key": "${apiKey}"
@@ -62,52 +61,52 @@ print(enhanced_prompt)
   };
 
   return (
-    <div id="code-example-container" className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden font-mono text-xs">
+    <div id="code-example-container" className="frosted-card bg-black/60 border border-white/10 rounded-xl overflow-hidden font-mono text-xs shadow-xl">
       {/* Code Header Tab Selectors */}
-      <div className="flex bg-slate-900 border-b border-slate-800 px-4 py-2 justify-between items-center">
+      <div className="flex bg-white/[0.04] border-b border-white/10 px-4 py-2 justify-between items-center">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+            <span className="w-2 h-2 rounded-full bg-rose-500/80" />
+            <span className="w-2 h-2 rounded-full bg-amber-400/80" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400/80" />
           </span>
-          <span className="h-4 w-px bg-slate-800" />
+          <span className="h-4 w-px bg-white/10" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             id="btn-code-lang-curl"
             onClick={() => setSelectedLang('curl')}
-            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
+            className={`flex items-center gap-1.5 py-1 px-3 rounded-lg text-xs font-mono transition-all duration-200 cursor-pointer ${
               selectedLang === 'curl' 
-                ? 'bg-slate-800 text-lime-400' 
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Terminal size={12} />
+            <Terminal size={12} className={selectedLang === 'curl' ? 'text-sky-400' : ''} />
             cURL
           </button>
           <button
             id="btn-code-lang-js"
             onClick={() => setSelectedLang('javascript')}
-            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
+            className={`flex items-center gap-1.5 py-1 px-3 rounded-lg text-xs font-mono transition-all duration-200 cursor-pointer ${
               selectedLang === 'javascript' 
-                ? 'bg-slate-800 text-lime-400' 
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <FileCode size={12} />
+            <FileCode size={12} className={selectedLang === 'javascript' ? 'text-sky-400' : ''} />
             JavaScript
           </button>
           <button
             id="btn-code-lang-py"
             onClick={() => setSelectedLang('python')}
-            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all duration-200 font-medium ${
+            className={`flex items-center gap-1.5 py-1 px-3 rounded-lg text-xs font-mono transition-all duration-200 cursor-pointer ${
               selectedLang === 'python' 
-                ? 'bg-slate-800 text-lime-400' 
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white/10 text-white font-semibold border border-white/20 shadow-sm' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Cpu size={12} />
+            <Cpu size={12} className={selectedLang === 'python' ? 'text-sky-400' : ''} />
             Python
           </button>
         </div>
@@ -115,12 +114,12 @@ print(enhanced_prompt)
         <button
           id="btn-copy-snippet"
           onClick={handleCopy}
-          className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg transition-colors duration-200 flex items-center gap-1.5 focus:outline-none"
+          className="p-1.5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors duration-200 flex items-center gap-1.5 focus:outline-none cursor-pointer"
           title="Copy snippet"
         >
           {copied ? (
-            <span className="flex items-center gap-1 text-[10px] text-lime-400 font-bold font-sans">
-              <Check size={12} /> Copied!
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold font-mono">
+              <Check size={12} className="text-emerald-400" /> Copied!
             </span>
           ) : (
             <Copy size={13} />
@@ -129,7 +128,7 @@ print(enhanced_prompt)
       </div>
 
       {/* Code Snippet Box */}
-      <div className="p-4 overflow-x-auto text-slate-300 leading-relaxed max-h-80 select-all whitespace-pre">
+      <div className="p-4 overflow-x-auto text-sky-200/90 leading-relaxed max-h-80 select-all whitespace-pre bg-black/50">
         <code>{SNIPPETS[selectedLang]}</code>
       </div>
     </div>

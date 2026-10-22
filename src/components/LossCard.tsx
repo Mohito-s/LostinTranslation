@@ -14,31 +14,31 @@ export default function LossCard({ item }: LossCardProps) {
   return (
     <div 
       id={`loss-card-${item.fragment.replace(/\s+/g, '-').toLowerCase()}`}
-      className="bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl p-4 transition-all duration-300 shadow-md hover:shadow-slate-950/40 group cursor-pointer"
+      className="frosted-card hover:border-sky-400/40 rounded-xl p-4 transition-all duration-300 shadow-sm group cursor-pointer bg-white/[0.03] backdrop-blur-xl border border-white/10"
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex gap-3">
-          <div className="mt-1 p-2 bg-lime-500/10 text-lime-400 rounded-lg shrink-0">
+          <div className="mt-1 p-2 bg-rose-500/15 text-rose-300 rounded-lg shrink-0 border border-rose-500/30">
             <AlertCircle size={18} />
           </div>
           <div>
-            <span className="inline-block font-mono text-sm px-2 py-0.5 bg-slate-900 text-lime-300 rounded border border-lime-500/20 font-bold mb-1.5">
+            <span className="inline-block font-mono text-sm px-2.5 py-0.5 bg-black/40 text-sky-300 rounded-md border border-sky-400/30 font-semibold mb-1.5 shadow-sm">
               "{item.fragment}"
             </span>
-            <p className="text-slate-200 font-medium leading-relaxed">
+            <p className="text-white font-medium leading-relaxed font-sans">
               {item.short}
             </p>
           </div>
         </div>
         <button 
           id={`btn-expand-${item.fragment.replace(/\s+/g, '-').toLowerCase()}`}
-          className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/40 rounded-lg transition-colors duration-200 focus:outline-none"
+          className="p-1.5 text-slate-400 hover:text-sky-300 hover:bg-white/[0.05] rounded-lg transition-colors duration-200 focus:outline-none"
           aria-label={isExpanded ? "Collapse" : "Expand"}
         >
           <ChevronDown 
             size={18} 
-            className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180 text-lime-400' : ''}`} 
+            className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180 text-sky-400' : ''}`} 
           />
         </button>
       </div>
@@ -52,26 +52,26 @@ export default function LossCard({ item }: LossCardProps) {
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="pt-4 mt-3 border-t border-slate-700/50 flex flex-col gap-4 text-sm">
-              <div className="flex gap-2.5 items-start bg-slate-900/40 p-3 rounded-lg border border-slate-700/30">
-                <BookOpen size={16} className="text-slate-400 shrink-0 mt-0.5" />
+            <div className="pt-4 mt-3 border-t border-white/10 flex flex-col gap-3 text-sm">
+              <div className="flex gap-2.5 items-start bg-black/40 p-3.5 rounded-xl border border-white/10">
+                <BookOpen size={16} className="text-sky-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Глубокий культурный анализ:
+                  <h4 className="text-xs font-sans font-bold text-sky-300 uppercase tracking-wider mb-1">
+                    § Глубокий культурный анализ:
                   </h4>
-                  <p className="text-slate-300 leading-relaxed text-[13px]">
+                  <p className="text-slate-300 leading-relaxed text-[13px] font-sans">
                     {item.explanation}
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-2.5 items-start bg-lime-500/5 p-3 rounded-lg border border-lime-500/10">
-                <Sparkles size={16} className="text-lime-400 shrink-0 mt-0.5" />
+              <div className="flex gap-2.5 items-start bg-emerald-500/10 p-3.5 rounded-xl border border-emerald-500/20">
+                <Sparkles size={16} className="text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-semibold text-lime-400 uppercase tracking-wider mb-1">
-                    Рекомендуемый эквивалент в контексте:
+                  <h4 className="text-xs font-sans font-bold text-emerald-400 uppercase tracking-wider mb-1">
+                    § Рекомендуемый эквивалент в контексте:
                   </h4>
-                  <p className="text-lime-300 font-medium leading-relaxed text-[13px]">
+                  <p className="text-emerald-200 font-medium leading-relaxed text-[13px] font-sans">
                     {item.alternative}
                   </p>
                 </div>

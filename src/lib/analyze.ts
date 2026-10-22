@@ -27,6 +27,16 @@ function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
+function safeJsonParse(raw: string | undefined | null, fallback: any = {}): any {
+  if (!raw || typeof raw !== 'string') return fallback;
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    return fallback;
+  }
+}
+
 export interface LossItem {
   fragment: string;
   short: string;
@@ -150,7 +160,7 @@ If the text is simple, plain, and carries absolutely no hidden cultural context 
       }
     });
 
-    const parsed = JSON.parse(response.text || '{}');
+    const parsed = safeJsonParse(response.text, {});
     return {
       original: text,
       literal_translation: parsed.literal_translation || 'Translation unavailable',
@@ -159,7 +169,6 @@ If the text is simple, plain, and carries absolutely no hidden cultural context 
     };
   } catch (error) {
     logger.error({ err: error }, 'Error calling Gemini API in analyzeText:');
-    // Graceful fallback to mock data
     return getMockAnalysis(text, targetLanguage);
   }
 }
@@ -259,12 +268,13 @@ TRANSLATION INTO ${targetLanguage}: "${target}"
       }
     });
 
-    const parsed = JSON.parse(response.text || '{}');
-    const issues: CompareIssue[] = (parsed.issues || []).map((item: any) => ({
-      fragment: item.fragment || '',
-      short: item.short || '',
-      explanation: item.explanation || '',
-      alternative: item.alternative || '',
+    const parsed = safeJsonParse(response.text, {});
+    const rawIssues = Array.isArray(parsed.issues) ? parsed.issues : [];
+    const issues: CompareIssue[] = rawIssues.map((item: Record<string, any>) => ({
+      fragment: String(item.fragment || ''),
+      short: String(item.short || ''),
+      explanation: String(item.explanation || ''),
+      alternative: String(item.alternative || ''),
       severity: (item.severity === 'high' || item.severity === 'medium' || item.severity === 'low')
         ? item.severity
         : 'medium',

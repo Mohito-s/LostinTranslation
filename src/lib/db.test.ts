@@ -111,4 +111,11 @@ describe('local file database', () => {
     expect(logs).toHaveLength(1);
     expect(logs[0].endpoint).toBe('analyze');
   });
+
+  it('safely handles non-string or malformed API keys in validateApiKey', async () => {
+    expect(await db.validateApiKey('')).toBeNull();
+    expect(await db.validateApiKey(null as unknown as string)).toBeNull();
+    expect(await db.validateApiKey(12345 as unknown as string)).toBeNull();
+    expect(await db.validateApiKey('a'.repeat(200))).toBeNull();
+  });
 });

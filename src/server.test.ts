@@ -58,6 +58,15 @@ describe('HTTP API', () => {
     expect(login.status).toBe(401);
   });
 
+  it('authenticates via OAuth simulation endpoint', async () => {
+    const oauth = await request(app)
+      .post('/api/auth/oauth')
+      .send({ provider: 'github' });
+    expect(oauth.status).toBe(200);
+    expect(oauth.body.token).toBeTruthy();
+    expect(oauth.body.user.email).toBe('developer@github.com');
+  });
+
   it('validates request bodies', async () => {
     const res = await request(app).post('/api/analyze').send({});
     expect(res.status).toBe(400);
@@ -131,5 +140,26 @@ describe('HTTP API', () => {
     expect(stats.status).toBe(200);
     expect(stats.body.totalRequests).toBeGreaterThanOrEqual(1);
     expect(stats.body.apiKeys).toHaveLength(1);
+  });
+
+  it('serves growth benchmark and draft endpoints', async () => {
+    const bench = await request(app).get('/api/growth/benchmark');
+    expect(bench.status).toBe(200);
+    expect(bench.body.cases).toBeDefined();
+    expect(bench.body.rankings.length).toBeGreaterThan(0);
+
+    const draft = await request(app).get('/api/growth/draft?platform=habr');
+    expect(draft.status).toBe(200);
+    expect(draft.body.platform).toBe('habr');
+    expect(draft.body.title).toContain('Cultural QA');
+
+    const invalid = await request(app).get('/api/growth/draft?platform=invalid');
+    expect(invalid.status).toBe(400);
+
+    const badge = await request(app).get('/api/growth/badge?status=Tested&score=100');
+    expect(badge.status).toBe(200);
+    expect(badge.headers['content-type']).toContain('image/svg+xml');
+    const svgContent = badge.text || (badge.body && badge.body.toString());
+    expect(svgContent).toContain('Tested 100');
   });
 });

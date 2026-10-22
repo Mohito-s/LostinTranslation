@@ -1,4 +1,4 @@
-import { getDb, ApiKey } from './db';
+import { getRecentLogsStats, ApiKey } from './db';
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -18,7 +18,6 @@ const FREE_KEY_LIMIT = 50; // Sandbox key limit
  * Otherwise, it falls back to IP-based rate limiting.
  */
 export async function checkRateLimit(ipAddress: string, apiKeyObj: ApiKey | null): Promise<RateLimitResult> {
-  const db = await getDb();
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -27,19 +26,14 @@ export async function checkRateLimit(ipAddress: string, apiKeyObj: ApiKey | null
     const key = apiKeyObj.key;
     const limit = apiKeyObj.tier === 'paid' ? PAID_KEY_LIMIT : FREE_KEY_LIMIT;
 
-    // Filter logs for this API key in the last 24 hours
-    const keyLogs = db.usageLogs.filter(log => 
-      log.apiKey === key && 
-      new Date(log.timestamp) > oneDayAgo
-    );
-
-    const count = keyLogs.length;
+    const stats = await getRecentLogsStats({ apiKey: key, since: oneDayAgo });
+    const count = stats.count;
     const remaining = Math.max(0, limit - count);
 
     // Calculate time until oldest log in the 24h window expires (approximation)
     let resetHours = 24;
-    if (keyLogs.length > 0) {
-      const oldestLogTime = new Date(keyLogs[0].timestamp).getTime();
+    if (stats.oldestTimestamp) {
+      const oldestLogTime = new Date(stats.oldestTimestamp).getTime();
       const msToReset = oldestLogTime + 24 * 60 * 60 * 1000 - now.getTime();
       resetHours = Math.max(0.1, parseFloat((msToReset / (1000 * 60 * 60)).toFixed(1)));
     }
@@ -53,18 +47,13 @@ export async function checkRateLimit(ipAddress: string, apiKeyObj: ApiKey | null
   }
 
   // Otherwise, use IP-based rate limiting for anonymous requests (demo-site)
-  const anonymousLogs = db.usageLogs.filter(log => 
-    (!log.apiKey || log.apiKey === 'free') && 
-    log.ipAddress === ipAddress && 
-    new Date(log.timestamp) > oneDayAgo
-  );
-
-  const count = anonymousLogs.length;
+  const stats = await getRecentLogsStats({ ipAddress, since: oneDayAgo });
+  const count = stats.count;
   const remaining = Math.max(0, FREE_IP_LIMIT - count);
 
   let resetHours = 24;
-  if (anonymousLogs.length > 0) {
-    const oldestLogTime = new Date(anonymousLogs[0].timestamp).getTime();
+  if (stats.oldestTimestamp) {
+    const oldestLogTime = new Date(stats.oldestTimestamp).getTime();
     const msToReset = oldestLogTime + 24 * 60 * 60 * 1000 - now.getTime();
     resetHours = Math.max(0.1, parseFloat((msToReset / (1000 * 60 * 60)).toFixed(1)));
   }

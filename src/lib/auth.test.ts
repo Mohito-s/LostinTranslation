@@ -2,23 +2,23 @@ import { describe, it, expect } from 'vitest';
 import { hashPassword, verifyPassword, generateToken, verifyToken } from './auth';
 
 describe('password hashing (PBKDF2)', () => {
-  it('hashes and verifies a correct password', () => {
-    const hash = hashPassword('sup3r-secret');
+  it('hashes and verifies a correct password', async () => {
+    const hash = await hashPassword('sup3r-secret');
     expect(hash).toContain(':');
-    expect(verifyPassword('sup3r-secret', hash)).toBe(true);
+    expect(await verifyPassword('sup3r-secret', hash)).toBe(true);
   });
 
-  it('rejects a wrong password', () => {
-    const hash = hashPassword('right-password');
-    expect(verifyPassword('wrong-password', hash)).toBe(false);
+  it('rejects a wrong password', async () => {
+    const hash = await hashPassword('right-password');
+    expect(await verifyPassword('wrong-password', hash)).toBe(false);
   });
 
-  it('uses a unique salt per hash', () => {
-    expect(hashPassword('same')).not.toBe(hashPassword('same'));
+  it('uses a unique salt per hash', async () => {
+    expect(await hashPassword('same')).not.toBe(await hashPassword('same'));
   });
 
-  it('returns false for a malformed stored hash', () => {
-    expect(verifyPassword('x', 'not-a-valid-hash')).toBe(false);
+  it('returns false for a malformed stored hash', async () => {
+    expect(await verifyPassword('x', 'not-a-valid-hash')).toBe(false);
   });
 });
 
