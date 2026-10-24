@@ -365,10 +365,10 @@ export const MattkaOrbCanvas: React.FC<MattkaOrbCanvasProps> = ({
       <canvas ref={canvasRef} className="w-full h-full block" />
       {/* Subtle glass veil for inner tabs: preserves celestial stardust & living glow while guaranteeing 100% text readability */}
       <div
-        className={`absolute inset-0 pointer-events-none transition-all duration-700 ease-in-out ${
+        className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ease-out ${
           isHero
             ? 'opacity-0 bg-transparent'
-            : 'opacity-70 bg-[#05070f]/70 backdrop-blur-[1px]'
+            : 'opacity-75 bg-[#05070f]/75'
         }`}
       />
     </div>

@@ -452,10 +452,25 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
+  // Eagerly prefetch lazy modules in background so tab switching is instantaneous
+  useEffect(() => {
+    const prefetch = () => {
+      import('./components/ApiDocs');
+      import('./components/Integrations');
+      import('./components/SupportModal');
+      import('./components/PrivacyPolicy');
+    };
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(prefetch);
+    } else {
+      setTimeout(prefetch, 100);
+    }
+  }, []);
+
   // Helper to switch tabs and sync URL hash
   const switchTab = (tab: 'home' | 'demo' | 'docs' | 'dashboard' | 'integrations' | 'privacy') => {
     setCurrentTab(tab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
     if (window.location.hash.replace(/^#/, '') !== tab) {
       window.history.pushState(null, '', `#${tab}`);
     }
@@ -975,18 +990,18 @@ export default function App() {
       </header>
 
       {/* CORE PAGES COMPONENT CONTAINER */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 relative z-10 flex flex-col justify-center">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 relative z-10 flex flex-col">
         <AnimatePresence mode="wait">
           
           {/* TAB 1: LANDING PAGE */}
           {currentTab === 'home' && (
             <motion.div
               key="tab-home"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col items-center justify-center text-center relative py-4 px-4 my-auto"
+              initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center justify-center text-center relative py-4 px-4 my-auto w-full"
             >
               <RemixHud onOpenDemo={() => switchTab('demo')} />
 
@@ -1089,11 +1104,11 @@ export default function App() {
           {currentTab === 'demo' && (
             <motion.div
               key="tab-demo"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
-              className="flex flex-col gap-6"
+              initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col gap-6 w-full"
             >
               <div className="border-b border-white/10 pb-4">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-sky-300 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/20">
@@ -1116,10 +1131,11 @@ export default function App() {
           {currentTab === 'docs' && (
             <motion.div
               key="tab-docs"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full"
             >
               <React.Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-sm"><RefreshCw className="animate-spin mr-2" size={16} /> Loading documentation...</div>}>
                 <ApiDocs
@@ -1134,11 +1150,11 @@ export default function App() {
           {currentTab === 'dashboard' && (
             <motion.div
               key="tab-dashboard"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
-              className="flex flex-col gap-8"
+              initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col gap-8 w-full"
             >
               {!user ? (
                 <div className="frosted-card max-w-[480px] mx-auto w-full my-8 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
@@ -1162,7 +1178,7 @@ export default function App() {
                       onClick={() => { setAuthTab('login'); setAuthError(null); }}
                       className={`flex-1 py-2 text-xs font-sans rounded-lg transition-all cursor-pointer ${
                         authTab === 'login' 
-                          ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm font-semibold' 
+                          ? 'bg-sky-500/20 text-sky-200 border border-sky-400/40 shadow-sm font-semibold' 
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
@@ -1172,7 +1188,7 @@ export default function App() {
                       onClick={() => { setAuthTab('register'); setAuthError(null); }}
                       className={`flex-1 py-2 text-xs font-sans rounded-lg transition-all cursor-pointer ${
                         authTab === 'register' 
-                          ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-sm font-semibold' 
+                          ? 'bg-sky-500/20 text-sky-200 border border-sky-400/40 shadow-sm font-semibold' 
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
@@ -1182,11 +1198,6 @@ export default function App() {
 
                   {/* Quick OAuth Providers Grid (Official Branded Styles) */}
                   <div className="mb-5">
-                    <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                      <span>{lang === 'ru' ? "Вход в 1 клик:" : "1-Click Quick Sign In:"}</span>
-                      <span className="text-[10px] text-emerald-400 font-mono">● {lang === 'ru' ? "Мгновенно" : "Instant"}</span>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-3">
                       {/* 1. GitHub Button */}
                       <button
@@ -1690,10 +1701,11 @@ export default function App() {
           {currentTab === 'integrations' && (
             <motion.div
               key="tab-integrations"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full"
             >
               <React.Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-sm"><RefreshCw className="animate-spin mr-2" size={16} /> Loading integrations...</div>}>
                 <Integrations 
@@ -1710,10 +1722,11 @@ export default function App() {
           {currentTab === 'privacy' && (
             <motion.div
               key="tab-privacy"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full"
             >
               <React.Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-400 font-mono text-sm"><RefreshCw className="animate-spin mr-2" size={16} /> Loading policy...</div>}>
                 <PrivacyPolicy 
