@@ -33,6 +33,7 @@
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "check": "tsc --noEmit && vitest run",
+    "test:gateway": "node scripts/test-gateway.js",
     "cap:sync": "cap sync",
     "cap:add:android": "cap add android",
     "cap:open": "cap open android"
