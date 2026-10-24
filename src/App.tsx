@@ -32,7 +32,6 @@ import {
 } from 'lucide-react';
 import DemoWidget from './components/DemoWidget';
 import { MattkaOrbCanvas } from './components/MattkaOrbCanvas';
-import { RemixHud } from './components/RemixHud';
 
 // Lazy loaded code-split routes and modals for optimized bundle size
 const Integrations = React.lazy(() => import('./components/Integrations'));
@@ -1003,8 +1002,6 @@ export default function App() {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col items-center justify-center text-center relative py-4 px-4 my-auto w-full"
             >
-              <RemixHud onOpenDemo={() => switchTab('demo')} />
-
               <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center">
                 {/* Status Chip */}
                 <div className="inline-flex flex-wrap items-center justify-center gap-2 text-xs text-white/95 bg-white/[0.06] border border-white/15 rounded-full px-3.5 py-1 mb-5 backdrop-blur-2xl shadow-xl max-w-[95%]">
